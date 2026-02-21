@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Dashboard — LexTrack</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">⚖️</div>
+      <h1>LexTrack <span id="sidebar-firm-name">Law Firm</span></h1>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">My Work</div>
+      <nav class="sidebar-nav">
+        <a href="/lawyer/dashboard.html" class="active">
+          <span class="nav-icon">📊</span> My Dashboard
+        </a>
+        <a href="/lawyer/time-entries.html">
+          <span class="nav-icon">⏱️</span> Time Entries
+          <span class="nav-badge" id="draft-badge" style="display:none">0</span>
+        </a>
+        <a href="/lawyer/timer.html">
+          <span class="nav-icon">▶️</span> Live Timer
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Reference</div>
+      <nav class="sidebar-nav">
+        <a href="/lawyer/matters.html">
+          <span class="nav-icon">📁</span> My Matters
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebar-user-avatar">JD</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-user-name">Loading...</div>
+        <div class="user-role" id="sidebar-user-role">lawyer</div>
+      </div>
+      <button class="logout-btn" onclick="logout()" title="Sign out">↪</button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h2 id="greeting">Good morning!</h2>
+        <div class="page-subtitle" id="today-date"></div>
+      </div>
+      <div class="header-actions">
+        <div class="timer-widget" id="header-timer" style="display:none">
+          <span class="timer-label">Running</span>
+          <span class="timer-display" id="header-timer-display">00:00:00</span>
+          <button class="btn btn-sm btn-danger" onclick="stopHeaderTimer()">Stop</button>
+        </div>
+        <a href="/lawyer/time-entries.html?new=1" class="btn btn-gold">
+          ＋ Log Time
+        </a>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <!-- Quick Stats -->
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Today's Hours</span>
+            <div class="stat-icon navy">⏱️</div>
+          </div>
+          <div class="stat-value" id="stat-today">—</div>
+          <div class="stat-sub">billable logged today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">This Week</span>
+            <div class="stat-icon gold">📅</div>
+          </div>
+          <div class="stat-value" id="stat-week">—</div>
+          <div class="stat-sub" id="stat-week-sub">billable hours</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Month Progress</span>
+            <div class="stat-icon green">🎯</div>
+          </div>
+          <div class="stat-value" id="stat-month">—</div>
+          <div class="stat-sub" id="stat-month-target">of — target</div>
+          <div class="progress-bar" style="margin-top:10px">
+            <div class="progress-fill" id="month-progress-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">YTD Billed</span>
+            <div class="stat-icon amber">💰</div>
+          </div>
+          <div class="stat-value" id="stat-ytd-billed">—</div>
+          <div class="stat-sub" id="stat-ytd-hours">— hours</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Annual Target</span>
+            <div class="stat-icon blue">🏆</div>
+          </div>
+          <div class="stat-value" id="stat-annual-pct">—</div>
+          <div class="stat-sub" id="stat-annual-sub">of annual target</div>
+          <div class="progress-bar" style="margin-top:10px">
+            <div class="progress-fill" id="annual-progress-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Pending Approval</span>
+            <div class="stat-icon red">📋</div>
+          </div>
+          <div class="stat-value" id="stat-drafts">—</div>
+          <div class="stat-sub">entries to submit</div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="grid-cols-3-2 mb-6">
+        <div class="card">
+          <div class="card-header">
+            <h3>Daily Hours — This Month</h3>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="daily-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Hours by Matter</h3>
+          </div>
+          <div class="card-body">
+            <div id="matter-breakdown"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Entries -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Recent Time Entries</h3>
+          <div class="card-actions">
+            <a href="/lawyer/time-entries.html" class="btn btn-outline btn-sm">View All</a>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Client / Matter</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th class="text-right">Hours</th>
+                <th class="text-right">Billed</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="recent-entries-body">
+              <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">⏳</div><p>Loading entries...</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/assets/js/common.js"></script>
+<script>
+let dashData = null;
+let dailyChart = null;
+
+async function init() {
+  const user = await loadCurrentUser();
+  if (!user) return;
+
+  // Redirect manager to management dashboard
+  if (['manager', 'admin'].includes(user.role)) {
+    window.location.href = '/management/dashboard.html';
+    return;
+  }
+
+  initSidebarUser(user);
+
+  // Greeting
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting').textContent = `${greeting}, ${user.full_name.split(' ')[0]}!`;
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  await loadDashboard();
+
+  // Poll for timer state
+  const timerData = sessionStorage.getItem('active-timer');
+  if (timerData) {
+    document.getElementById('header-timer').style.display = 'flex';
+  }
+}
+
+async function loadDashboard() {
+  try {
+    dashData = await api.get('/api/dashboard/lawyer');
+    renderStats(dashData);
+    renderDailyChart(dashData.daily_hours);
+    renderMatterBreakdown(dashData.matter_breakdown);
+    renderRecentEntries(dashData.recent_entries);
+
+    // Draft badge
+    if (dashData.draft_count > 0) {
+      const badge = document.getElementById('draft-badge');
+      badge.textContent = dashData.draft_count;
+      badge.style.display = 'inline';
+    }
+  } catch (err) {
+    showToast('Failed to load dashboard: ' + err.message, 'error');
+  }
+}
+
+function renderStats(d) {
+  const today = d.today || {};
+  const week = d.week || {};
+  const month = d.month || {};
+  const ytd = d.ytd || {};
+  const mTarget = d.month_target || {};
+  const aTarget = d.annual_target || {};
+
+  document.getElementById('stat-today').textContent = fmt.hours(today.hours);
+  document.getElementById('stat-week').textContent = fmt.hours(week.billable_hours);
+  document.getElementById('stat-month').textContent = fmt.hours(month.billable_hours);
+  document.getElementById('stat-ytd-billed').textContent = fmt.currency(ytd.billed);
+  document.getElementById('stat-ytd-hours').textContent = fmt.hours(ytd.billable_hours) + ' billable hours';
+  document.getElementById('stat-drafts').textContent = d.draft_count;
+
+  // Month progress
+  if (mTarget.target_hours) {
+    const pct = Math.min(100, (month.billable_hours / mTarget.target_hours) * 100);
+    document.getElementById('stat-month-target').textContent = `of ${fmt.hours(mTarget.target_hours)} target`;
+    document.getElementById('month-progress-bar').style.width = pct + '%';
+    document.getElementById('month-progress-bar').className = `progress-fill ${pct >= 100 ? 'green' : pct < 50 ? 'red' : ''}`;
+  }
+
+  // Annual progress
+  if (aTarget.target_hours) {
+    const pct = Math.min(100, (ytd.billable_hours / aTarget.target_hours) * 100);
+    document.getElementById('stat-annual-pct').textContent = fmt.pct(pct);
+    document.getElementById('stat-annual-sub').textContent = `${fmt.hours(ytd.billable_hours)} of ${fmt.hours(aTarget.target_hours)} annual`;
+    document.getElementById('annual-progress-bar').style.width = pct + '%';
+    document.getElementById('annual-progress-bar').className = `progress-fill ${pct >= 100 ? 'green' : ''}`;
+  }
+}
+
+function renderDailyChart(data) {
+  if (!data || data.length === 0) return;
+  const labels = data.map(d => fmt.shortDate(d.entry_date));
+  const billable = data.map(d => Number(d.billable_hours) || 0);
+  const total = data.map(d => Number(d.total_hours) || 0);
+  const nonBillable = total.map((t, i) => Math.max(0, t - billable[i]));
+
+  if (dailyChart) dailyChart.destroy();
+  const ctx = document.getElementById('daily-chart').getContext('2d');
+  dailyChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Billable', data: billable, backgroundColor: '#c9a84c', borderRadius: 3, stack: 'hours' },
+        { label: 'Non-Billable', data: nonBillable, backgroundColor: '#e4e7ec', borderRadius: 3, stack: 'hours' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { stacked: true, beginAtZero: true, ticks: { font: { size: 11 } }, grid: { color: '#f0f2f5' } },
+      }
+    }
+  });
+}
+
+function renderMatterBreakdown(data) {
+  const el = document.getElementById('matter-breakdown');
+  if (!data || data.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📁</div><p>No entries this month</p></div>';
+    return;
+  }
+  const maxHours = Math.max(...data.map(d => d.hours));
+  const colors = CHART_COLORS;
+  el.innerHTML = data.map((d, i) => `
+    <div class="utilization-row">
+      <div class="util-name" title="${d.matter_name}">${d.matter_name}</div>
+      <div class="util-bar">
+        <div class="util-fill" style="width:${(d.hours/maxHours*100).toFixed(0)}%;background:${colors[i % colors.length]}"></div>
+      </div>
+      <div class="util-pct" style="color:${colors[i % colors.length]}">${fmt.hours(d.hours)}</div>
+    </div>
+  `).join('');
+}
+
+function renderRecentEntries(entries) {
+  const tbody = document.getElementById('recent-entries-body');
+  if (!entries || entries.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📝</div><h4>No entries yet</h4><p>Start logging your time</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = entries.map(e => `
+    <tr>
+      <td class="text-sm">${fmt.date(e.entry_date)}</td>
+      <td>
+        <div class="fw-semibold truncate" style="max-width:160px">${e.client_name}</div>
+        <div class="text-sm text-muted">${e.matter_name}</div>
+      </td>
+      <td class="truncate" style="max-width:200px" title="${e.description}">${e.description}</td>
+      <td><span class="badge badge-${e.activity_type}">${fmt.activityType(e.activity_type)}</span></td>
+      <td class="text-right fw-semibold">${fmt.hours(e.hours)}</td>
+      <td class="text-right text-sm">${e.billed_amount > 0 ? fmt.currency(e.billed_amount) : '—'}</td>
+      <td><span class="badge badge-${e.status}">${fmt.status(e.status)}</span></td>
+      <td>
+        <a href="/lawyer/time-entries.html?edit=${e.id}" class="btn btn-ghost btn-sm btn-icon" title="Edit">✏️</a>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function stopHeaderTimer() {
+  sessionStorage.removeItem('active-timer');
+  document.getElementById('header-timer').style.display = 'none';
+}
+
+init();
+</script>
+</body>
+</html>

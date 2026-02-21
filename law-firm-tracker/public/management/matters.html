@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matters — LexTrack</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">⚖️</div><h1>LexTrack <span id="sidebar-firm-name">Law Firm</span></h1></div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Management</div>
+      <nav class="sidebar-nav">
+        <a href="/management/dashboard.html"><span class="nav-icon">📊</span> Firm Dashboard</a>
+        <a href="/management/time-review.html"><span class="nav-icon">✅</span> Time Approval</a>
+        <a href="/management/reports.html"><span class="nav-icon">📈</span> Reports</a>
+      </nav>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Configuration</div>
+      <nav class="sidebar-nav">
+        <a href="/management/clients.html"><span class="nav-icon">👥</span> Clients</a>
+        <a href="/management/matters.html" class="active"><span class="nav-icon">📁</span> Matters</a>
+        <a href="/management/billing-config.html"><span class="nav-icon">⚙️</span> Billing Config</a>
+        <a href="/management/lawyers.html"><span class="nav-icon">👔</span> Lawyers</a>
+      </nav>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebar-user-avatar">MS</div>
+      <div class="user-info"><div class="user-name" id="sidebar-user-name">Loading...</div><div class="user-role" id="sidebar-user-role">manager</div></div>
+      <button class="logout-btn" onclick="logout()">↪</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div><h2>Matters</h2><div class="page-subtitle">Manage all firm cases and projects</div></div>
+      <div class="header-actions">
+        <button class="btn btn-gold" onclick="openModal('matter-modal')">＋ New Matter</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <select id="filter-status">
+        <option value="">All Statuses</option>
+        <option value="open">Open</option>
+        <option value="closed">Closed</option>
+        <option value="on_hold">On Hold</option>
+      </select>
+      <select id="filter-model">
+        <option value="">All Billing Models</option>
+        <option value="hourly">Hourly</option>
+        <option value="fixed_fee">Fixed Fee</option>
+        <option value="contingency">Contingency</option>
+        <option value="retainer">Retainer</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="loadMatters()">🔍 Filter</button>
+    </div>
+
+    <div class="page-body" style="padding-top:16px">
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Matter #</th>
+                <th>Name</th>
+                <th>Client</th>
+                <th>Practice Area</th>
+                <th>Responsible</th>
+                <th>Billing</th>
+                <th class="text-right">Hours</th>
+                <th class="text-right">Billed</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="matters-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- New Matter Modal -->
+<div class="modal-overlay" id="matter-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 id="matter-modal-title">New Matter</h3>
+      <button class="modal-close" onclick="closeModal('matter-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="matter-form">
+        <input type="hidden" id="matter-id" />
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Client <span class="required">*</span></label>
+            <select id="matter-client" class="form-control" required>
+              <option value="">Select client...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Practice Area</label>
+            <select id="matter-pa" class="form-control">
+              <option value="">Select practice area...</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Matter Name <span class="required">*</span></label>
+            <input type="text" id="matter-name" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Matter Number</label>
+            <input type="text" id="matter-number" class="form-control" placeholder="Auto-generated" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea id="matter-desc" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Billing Model <span class="required">*</span></label>
+            <select id="matter-billing" class="form-control" onchange="updateBillingFields()">
+              <option value="hourly">Hourly</option>
+              <option value="fixed_fee">Fixed Fee</option>
+              <option value="contingency">Contingency</option>
+              <option value="retainer">Retainer</option>
+              <option value="blended">Blended</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Responsible Lawyer</label>
+            <select id="matter-lawyer" class="form-control">
+              <option value="">Select lawyer...</option>
+            </select>
+          </div>
+        </div>
+        <div id="billing-extra-fields">
+          <div id="fee-amount-field" class="form-group" style="display:none">
+            <label class="form-label">Fixed Fee Amount ($)</label>
+            <input type="number" id="matter-fixed-fee" class="form-control" step="500" min="0" />
+          </div>
+          <div id="contingency-field" class="form-group" style="display:none">
+            <label class="form-label">Contingency Percentage (%)</label>
+            <input type="number" id="matter-contingency" class="form-control" step="1" min="0" max="50" />
+          </div>
+          <div id="retainer-field" class="form-group" style="display:none">
+            <label class="form-label">Retainer Amount ($)</label>
+            <input type="number" id="matter-retainer" class="form-control" step="500" min="0" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Budget Hours</label>
+            <input type="number" id="matter-budget-hours" class="form-control" step="10" min="0" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Open Date</label>
+            <input type="date" id="matter-open-date" class="form-control" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select id="matter-status" class="form-control">
+            <option value="open">Open</option>
+            <option value="pending">Pending</option>
+            <option value="on_hold">On Hold</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('matter-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMatter()">Save Matter</button>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/js/common.js"></script>
+<script>
+let allMatters = [];
+
+async function init() {
+  const user = await loadCurrentUser();
+  if (!user) return;
+  if (user.role === 'lawyer') { window.location.href = '/lawyer/matters.html'; return; }
+  initSidebarUser(user);
+
+  document.getElementById('matter-open-date').value = todayISO();
+
+  await Promise.all([loadClients(), loadPracticeAreas(), loadLawyers(), loadMatters()]);
+}
+
+async function loadClients() {
+  const clients = await api.get('/api/clients');
+  const sel = document.getElementById('matter-client');
+  clients.forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.name}</option>`; });
+}
+
+async function loadPracticeAreas() {
+  const pas = await api.get('/api/billing/practice-areas');
+  const sel = document.getElementById('matter-pa');
+  pas.filter(p => p.is_active).forEach(p => { sel.innerHTML += `<option value="${p.id}">${p.name}</option>`; });
+}
+
+async function loadLawyers() {
+  const lawyers = await api.get('/api/billing/users');
+  const sel = document.getElementById('matter-lawyer');
+  lawyers.filter(u => ['lawyer','manager'].includes(u.role)).forEach(u => {
+    sel.innerHTML += `<option value="${u.id}">${u.full_name}</option>`;
+  });
+}
+
+async function loadMatters() {
+  const params = {};
+  const status = document.getElementById('filter-status').value;
+  const model = document.getElementById('filter-model').value;
+  if (status) params.status = status;
+  if (model) params.billing_model = model;
+
+  allMatters = await api.get('/api/matters', params);
+  const tbody = document.getElementById('matters-body');
+  if (allMatters.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📁</div><h4>No matters found</h4><p>Create your first matter</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = allMatters.map(m => `
+    <tr>
+      <td class="font-mono text-sm">${m.matter_number}</td>
+      <td>
+        <div class="fw-semibold">${m.name}</div>
+        ${m.description ? `<div class="text-sm text-muted truncate" style="max-width:160px">${m.description}</div>` : ''}
+      </td>
+      <td>${m.client_name}</td>
+      <td class="text-sm">${m.practice_area_name || '—'}</td>
+      <td class="text-sm">${m.responsible_lawyer_name || '—'}</td>
+      <td><span class="badge badge-${m.billing_model}">${fmt.billingModel(m.billing_model)}</span></td>
+      <td class="text-right fw-bold">${fmt.hours(m.total_billed_hours)}</td>
+      <td class="text-right">${m.total_billed_amount > 0 ? fmt.currency(m.total_billed_amount) : '—'}</td>
+      <td><span class="badge badge-${m.status}">${fmt.status(m.status)}</span></td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="editMatter('${m.id}')">✏️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateBillingFields() {
+  const model = document.getElementById('matter-billing').value;
+  document.getElementById('fee-amount-field').style.display = model === 'fixed_fee' ? 'block' : 'none';
+  document.getElementById('contingency-field').style.display = model === 'contingency' ? 'block' : 'none';
+  document.getElementById('retainer-field').style.display = model === 'retainer' ? 'block' : 'none';
+}
+
+function editMatter(id) {
+  const m = allMatters.find(x => x.id === id);
+  if (!m) return;
+  document.getElementById('matter-modal-title').textContent = 'Edit Matter';
+  document.getElementById('matter-id').value = m.id;
+  document.getElementById('matter-client').value = m.client_id;
+  document.getElementById('matter-pa').value = m.practice_area_id || '';
+  document.getElementById('matter-name').value = m.name;
+  document.getElementById('matter-number').value = m.matter_number;
+  document.getElementById('matter-desc').value = m.description || '';
+  document.getElementById('matter-billing').value = m.billing_model;
+  document.getElementById('matter-lawyer').value = m.responsible_lawyer_id || '';
+  document.getElementById('matter-status').value = m.status;
+  document.getElementById('matter-budget-hours').value = m.budget_hours || '';
+  document.getElementById('matter-open-date').value = m.open_date || '';
+  document.getElementById('matter-fixed-fee').value = m.fixed_fee_amount || '';
+  document.getElementById('matter-contingency').value = m.contingency_percentage || '';
+  document.getElementById('matter-retainer').value = m.retainer_amount || '';
+  updateBillingFields();
+  openModal('matter-modal');
+}
+
+async function saveMatter() {
+  const id = document.getElementById('matter-id').value;
+  const payload = {
+    client_id: document.getElementById('matter-client').value,
+    practice_area_id: document.getElementById('matter-pa').value || null,
+    name: document.getElementById('matter-name').value,
+    matter_number: document.getElementById('matter-number').value || undefined,
+    description: document.getElementById('matter-desc').value,
+    billing_model: document.getElementById('matter-billing').value,
+    responsible_lawyer_id: document.getElementById('matter-lawyer').value || null,
+    status: document.getElementById('matter-status').value,
+    budget_hours: parseFloat(document.getElementById('matter-budget-hours').value) || 0,
+    open_date: document.getElementById('matter-open-date').value,
+    fixed_fee_amount: parseFloat(document.getElementById('matter-fixed-fee').value) || 0,
+    contingency_percentage: parseFloat(document.getElementById('matter-contingency').value) || 0,
+    retainer_amount: parseFloat(document.getElementById('matter-retainer').value) || 0,
+  };
+  if (!payload.client_id || !payload.name) { showToast('Client and name are required', 'warning'); return; }
+  try {
+    if (id) await api.put(`/api/matters/${id}`, payload);
+    else await api.post('/api/matters', payload);
+    closeModal('matter-modal');
+    document.getElementById('matter-id').value = '';
+    document.getElementById('matter-modal-title').textContent = 'New Matter';
+    document.getElementById('matter-form').reset();
+    showToast('Matter saved');
+    await loadMatters();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+init();
+</script>
+</body>
+</html>

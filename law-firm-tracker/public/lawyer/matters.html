@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Matters — LexTrack</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">⚖️</div>
+      <h1>LexTrack <span id="sidebar-firm-name">Law Firm</span></h1>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">My Work</div>
+      <nav class="sidebar-nav">
+        <a href="/lawyer/dashboard.html"><span class="nav-icon">📊</span> My Dashboard</a>
+        <a href="/lawyer/time-entries.html"><span class="nav-icon">⏱️</span> Time Entries</a>
+        <a href="/lawyer/timer.html"><span class="nav-icon">▶️</span> Live Timer</a>
+      </nav>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Reference</div>
+      <nav class="sidebar-nav">
+        <a href="/lawyer/matters.html" class="active"><span class="nav-icon">📁</span> My Matters</a>
+      </nav>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebar-user-avatar">JD</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-user-name">Loading...</div>
+        <div class="user-role" id="sidebar-user-role">lawyer</div>
+      </div>
+      <button class="logout-btn" onclick="logout()">↪</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h2>My Matters</h2>
+        <div class="page-subtitle">Cases and matters assigned to you</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <select id="filter-status">
+        <option value="">All Statuses</option>
+        <option value="open">Open</option>
+        <option value="closed">Closed</option>
+        <option value="on_hold">On Hold</option>
+      </select>
+      <select id="filter-model">
+        <option value="">All Billing Models</option>
+        <option value="hourly">Hourly</option>
+        <option value="fixed_fee">Fixed Fee</option>
+        <option value="contingency">Contingency</option>
+        <option value="retainer">Retainer</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="loadMatters()">🔍 Filter</button>
+    </div>
+
+    <div class="page-body" style="padding-top:16px">
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Matter #</th>
+                <th>Matter Name</th>
+                <th>Client</th>
+                <th>Practice Area</th>
+                <th>Billing Model</th>
+                <th class="text-right">Hours Logged</th>
+                <th class="text-right">Amount Billed</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="matters-body">
+              <tr><td colspan="9"><div class="empty-state"><div class="empty-icon">⏳</div><p>Loading...</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/assets/js/common.js"></script>
+<script>
+async function init() {
+  const user = await loadCurrentUser();
+  if (!user) return;
+  if (['manager', 'admin'].includes(user.role)) { window.location.href = '/management/dashboard.html'; return; }
+  initSidebarUser(user);
+  await loadMatters();
+}
+
+async function loadMatters() {
+  try {
+    const params = {};
+    const status = document.getElementById('filter-status').value;
+    const model = document.getElementById('filter-model').value;
+    if (status) params.status = status;
+    if (model) params.billing_model = model;
+
+    const matters = await api.get('/api/matters', params);
+    const tbody = document.getElementById('matters-body');
+
+    if (matters.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📁</div><h4>No matters found</h4><p>Contact your manager to assign matters</p></div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = matters.map(m => `
+      <tr>
+        <td class="font-mono text-sm">${m.matter_number}</td>
+        <td>
+          <div class="fw-semibold">${m.name}</div>
+          ${m.description ? `<div class="text-sm text-muted truncate" style="max-width:180px">${m.description}</div>` : ''}
+        </td>
+        <td>${m.client_name}</td>
+        <td class="text-sm">${m.practice_area_name || '—'}</td>
+        <td><span class="badge badge-${m.billing_model}">${fmt.billingModel(m.billing_model)}</span></td>
+        <td class="text-right fw-bold">${fmt.hours(m.total_billed_hours)}</td>
+        <td class="text-right">${m.total_billed_amount > 0 ? fmt.currency(m.total_billed_amount) : '—'}</td>
+        <td><span class="badge badge-${m.status}">${fmt.status(m.status)}</span></td>
+        <td>
+          <a href="/lawyer/time-entries.html?matter=${m.id}" class="btn btn-ghost btn-sm btn-icon" title="Log time for this matter">⏱️</a>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    showToast('Failed to load matters: ' + err.message, 'error');
+  }
+}
+
+init();
+</script>
+</body>
+</html>

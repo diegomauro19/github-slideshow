@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Billing Configuration — LexTrack</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">⚖️</div><h1>LexTrack <span id="sidebar-firm-name">Law Firm</span></h1></div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Management</div>
+      <nav class="sidebar-nav">
+        <a href="/management/dashboard.html"><span class="nav-icon">📊</span> Firm Dashboard</a>
+        <a href="/management/time-review.html"><span class="nav-icon">✅</span> Time Approval</a>
+        <a href="/management/reports.html"><span class="nav-icon">📈</span> Reports</a>
+      </nav>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Configuration</div>
+      <nav class="sidebar-nav">
+        <a href="/management/clients.html"><span class="nav-icon">👥</span> Clients</a>
+        <a href="/management/matters.html"><span class="nav-icon">📁</span> Matters</a>
+        <a href="/management/billing-config.html" class="active"><span class="nav-icon">⚙️</span> Billing Config</a>
+        <a href="/management/lawyers.html"><span class="nav-icon">👔</span> Lawyers</a>
+      </nav>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebar-user-avatar">MS</div>
+      <div class="user-info"><div class="user-name" id="sidebar-user-name">Loading...</div><div class="user-role" id="sidebar-user-role">manager</div></div>
+      <button class="logout-btn" onclick="logout()">↪</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div><h2>Billing Configuration</h2><div class="page-subtitle">Manage rates, billing models, and firm settings</div></div>
+    </div>
+
+    <div class="page-body">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="tab-firm">Firm Settings</button>
+        <button class="tab-btn" data-tab="tab-practice">Practice Areas & Rates</button>
+        <button class="tab-btn" data-tab="tab-custom-rates">Custom Rate Overrides</button>
+        <button class="tab-btn" data-tab="tab-targets">Billable Targets</button>
+      </div>
+
+      <!-- Firm Settings -->
+      <div class="tab-panel active" id="tab-firm">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h3>Firm Information</h3></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Firm Name</label>
+                <input type="text" id="firm_name" class="form-control" />
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Currency</label>
+                  <select id="currency" class="form-control">
+                    <option value="USD">USD — US Dollar</option>
+                    <option value="EUR">EUR — Euro</option>
+                    <option value="GBP">GBP — British Pound</option>
+                    <option value="CAD">CAD — Canadian Dollar</option>
+                    <option value="AUD">AUD — Australian Dollar</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Currency Symbol</label>
+                  <input type="text" id="currency_symbol" class="form-control" placeholder="$" maxlength="3" />
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="saveFirmInfo()">Save Firm Info</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>Billing Parameters</h3></div>
+            <div class="card-body">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Default Tax Rate (%)</label>
+                  <input type="number" id="default_tax_rate" class="form-control" step="0.01" min="0" max="100" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Payment Terms (days)</label>
+                  <input type="number" id="payment_terms_days" class="form-control" min="0" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Invoice Prefix</label>
+                  <input type="text" id="invoice_prefix" class="form-control" placeholder="INV" maxlength="10" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Fiscal Year Start (month)</label>
+                  <select id="fiscal_year_start" class="form-control">
+                    <option value="01">January</option><option value="02">February</option>
+                    <option value="03">March</option><option value="04">April</option>
+                    <option value="07">July</option><option value="10">October</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Overtime Alert Threshold (hours/day)</label>
+                <input type="number" id="overtime_threshold" class="form-control" step="0.5" min="4" max="24" />
+              </div>
+              <button class="btn btn-primary" onclick="saveBillingParams()">Save Billing Params</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:20px">
+          <div class="card-header"><h3>Annual Billable Target</h3></div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Default Annual Target (hours)</label>
+                <input type="number" id="annual_billable_target" class="form-control" step="50" min="0" />
+                <div class="form-hint">Default annual billable hours target for all lawyers</div>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="saveTargetSettings()">Save Target Settings</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Practice Areas -->
+      <div class="tab-panel" id="tab-practice">
+        <div class="grid-cols-2-3">
+          <div class="card">
+            <div class="card-header">
+              <h3>Add Practice Area</h3>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Name <span class="required">*</span></label>
+                <input type="text" id="pa-name" class="form-control" placeholder="e.g. Family Law" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Default Hourly Rate ($)</label>
+                <input type="number" id="pa-rate" class="form-control" step="25" min="0" placeholder="350" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea id="pa-desc" class="form-control" rows="2" placeholder="Brief description..."></textarea>
+              </div>
+              <button class="btn btn-primary w-full" onclick="addPracticeArea()">Add Practice Area</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Practice Areas</h3></div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr><th>Name</th><th>Description</th><th class="text-right">Default Rate</th><th>Status</th><th></th></tr>
+                </thead>
+                <tbody id="practice-areas-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Rate Overrides -->
+      <div class="tab-panel" id="tab-custom-rates">
+        <div class="grid-cols-2-3">
+          <div class="card">
+            <div class="card-header"><h3>Add Rate Override</h3></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Lawyer (optional)</label>
+                <select id="rate-user" class="form-control">
+                  <option value="">Any Lawyer</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Matter (optional)</label>
+                <select id="rate-matter" class="form-control">
+                  <option value="">Any Matter</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Practice Area (optional)</label>
+                <select id="rate-pa" class="form-control">
+                  <option value="">Any Practice Area</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Rate ($/hr) <span class="required">*</span></label>
+                  <input type="number" id="rate-amount" class="form-control" step="25" min="0" placeholder="450" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Effective From</label>
+                  <input type="date" id="rate-from" class="form-control" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Notes</label>
+                <input type="text" id="rate-notes" class="form-control" placeholder="Reason for override..." />
+              </div>
+              <button class="btn btn-primary w-full" onclick="addRateOverride()">Add Rate Override</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Active Rate Overrides</h3></div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr><th>Lawyer</th><th>Matter</th><th>Practice Area</th><th class="text-right">Rate</th><th>From</th><th></th></tr>
+                </thead>
+                <tbody id="rates-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Targets -->
+      <div class="tab-panel" id="tab-targets">
+        <div class="card">
+          <div class="card-header">
+            <h3>Monthly Billable Hour Targets</h3>
+            <div class="card-actions">
+              <select id="target-year" class="form-control" style="width:auto" onchange="loadTargets()">
+              </select>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Lawyer</th>
+                  <th>Annual Target (hrs)</th>
+                  <th>Annual Target ($)</th>
+                  <th>Monthly Target (hrs)</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="targets-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/assets/js/common.js"></script>
+<script>
+let settings = {};
+let lawyers = [];
+let practiceAreas = [];
+let matters = [];
+
+async function init() {
+  const user = await loadCurrentUser();
+  if (!user) return;
+  if (user.role === 'lawyer') { window.location.href = '/lawyer/dashboard.html'; return; }
+  initSidebarUser(user);
+  initTabs();
+
+  document.getElementById('rate-from').value = todayISO();
+
+  // Year selector
+  const yearSel = document.getElementById('target-year');
+  const now = new Date();
+  for (let y = now.getFullYear() + 1; y >= now.getFullYear() - 2; y--) {
+    yearSel.innerHTML += `<option value="${y}" ${y === now.getFullYear() ? 'selected' : ''}>${y}</option>`;
+  }
+
+  await Promise.all([loadSettings(), loadLawyers(), loadPracticeAreas(), loadMatters()]);
+  await Promise.all([loadRates(), loadTargets()]);
+}
+
+async function loadSettings() {
+  try {
+    settings = await api.get('/api/billing/settings');
+    const fields = ['firm_name','currency','currency_symbol','default_tax_rate','payment_terms_days',
+                    'invoice_prefix','fiscal_year_start','overtime_threshold','annual_billable_target'];
+    fields.forEach(k => {
+      const el = document.getElementById(k);
+      if (el && settings[k]) el.value = settings[k].value;
+    });
+  } catch (err) { showToast('Failed to load settings', 'error'); }
+}
+
+async function loadLawyers() {
+  try {
+    lawyers = await api.get('/api/billing/users');
+    const sel = document.getElementById('rate-user');
+    lawyers.filter(u => u.role !== 'admin').forEach(u => {
+      sel.innerHTML += `<option value="${u.id}">${u.full_name} (${u.title || u.role})</option>`;
+    });
+  } catch {}
+}
+
+async function loadPracticeAreas() {
+  try {
+    practiceAreas = await api.get('/api/billing/practice-areas');
+    renderPracticeAreas();
+    const sel = document.getElementById('rate-pa');
+    practiceAreas.forEach(pa => { sel.innerHTML += `<option value="${pa.id}">${pa.name}</option>`; });
+  } catch {}
+}
+
+async function loadMatters() {
+  try {
+    matters = await api.get('/api/matters');
+    const sel = document.getElementById('rate-matter');
+    matters.forEach(m => { sel.innerHTML += `<option value="${m.id}">[${m.matter_number}] ${m.name}</option>`; });
+  } catch {}
+}
+
+function renderPracticeAreas() {
+  const tbody = document.getElementById('practice-areas-body');
+  if (practiceAreas.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state" style="padding:20px"><p>No practice areas</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = practiceAreas.map(pa => `
+    <tr>
+      <td class="fw-semibold">${pa.name}</td>
+      <td class="text-sm text-muted">${pa.description || '—'}</td>
+      <td class="text-right fw-bold">$${pa.default_rate}/hr</td>
+      <td><span class="badge ${pa.is_active ? 'badge-open' : 'badge-closed'}">${pa.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="togglePA('${pa.id}', ${pa.is_active})">${pa.is_active ? 'Deactivate' : 'Activate'}</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function addPracticeArea() {
+  const name = document.getElementById('pa-name').value.trim();
+  const rate = parseFloat(document.getElementById('pa-rate').value) || 0;
+  const desc = document.getElementById('pa-desc').value.trim();
+  if (!name) { showToast('Name is required', 'warning'); return; }
+  try {
+    await api.post('/api/billing/practice-areas', { name, default_rate: rate, description: desc });
+    showToast('Practice area added');
+    document.getElementById('pa-name').value = '';
+    document.getElementById('pa-rate').value = '';
+    document.getElementById('pa-desc').value = '';
+    practiceAreas = await api.get('/api/billing/practice-areas');
+    renderPracticeAreas();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function togglePA(id, current) {
+  try {
+    await api.put(`/api/billing/practice-areas/${id}`, { is_active: current ? 0 : 1 });
+    practiceAreas = await api.get('/api/billing/practice-areas');
+    renderPracticeAreas();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function loadRates() {
+  try {
+    const rates = await api.get('/api/billing/rates');
+    const tbody = document.getElementById('rates-body');
+    if (rates.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state" style="padding:20px"><p>No rate overrides configured</p></div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = rates.map(r => `
+      <tr>
+        <td>${r.user_name || '<em>Any</em>'}</td>
+        <td class="text-sm">${r.matter_name ? `[${r.matter_number}] ${r.matter_name}` : '—'}</td>
+        <td class="text-sm">${r.practice_area_name || '—'}</td>
+        <td class="text-right fw-bold">$${r.rate}/hr</td>
+        <td class="text-sm">${fmt.date(r.effective_from)}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="deleteRate('${r.id}')" style="color:var(--red)">🗑️</button></td>
+      </tr>
+    `).join('');
+  } catch {}
+}
+
+async function addRateOverride() {
+  const rate = parseFloat(document.getElementById('rate-amount').value);
+  if (!rate) { showToast('Rate is required', 'warning'); return; }
+  try {
+    await api.post('/api/billing/rates', {
+      user_id: document.getElementById('rate-user').value || null,
+      matter_id: document.getElementById('rate-matter').value || null,
+      practice_area_id: document.getElementById('rate-pa').value || null,
+      rate,
+      effective_from: document.getElementById('rate-from').value,
+      notes: document.getElementById('rate-notes').value,
+    });
+    showToast('Rate override added');
+    await loadRates();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function deleteRate(id) {
+  try {
+    await api.delete(`/api/billing/rates/${id}`);
+    showToast('Rate override removed', 'warning');
+    await loadRates();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function loadTargets() {
+  const year = parseInt(document.getElementById('target-year').value);
+  try {
+    const targets = await api.get('/api/billing/targets', { year });
+    const lawyerList = lawyers.filter(u => u.role === 'lawyer');
+    const tbody = document.getElementById('targets-body');
+
+    tbody.innerHTML = lawyerList.map(u => {
+      const annual = targets.find(t => t.user_id === u.id && !t.month);
+      const monthly = targets.find(t => t.user_id === u.id && t.month === new Date().getMonth() + 1);
+      return `
+        <tr>
+          <td>
+            <div class="fw-semibold">${u.full_name}</div>
+            <div class="text-sm text-muted">${u.title || ''} — $${u.default_hourly_rate}/hr</div>
+          </td>
+          <td>
+            <input type="number" class="form-control" style="width:120px" step="50"
+              value="${annual?.target_hours || 1800}" id="annual-hrs-${u.id}" />
+          </td>
+          <td>
+            <input type="number" class="form-control" style="width:120px" step="1000"
+              value="${annual?.target_amount || 0}" id="annual-amt-${u.id}" placeholder="$ amount" />
+          </td>
+          <td>
+            <input type="number" class="form-control" style="width:120px" step="10"
+              value="${monthly?.target_hours || 150}" id="monthly-hrs-${u.id}" />
+          </td>
+          <td>
+            <button class="btn btn-primary btn-sm" onclick="saveTarget('${u.id}', ${year}, ${u.default_hourly_rate})">Save</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) { showToast('Failed to load targets', 'error'); }
+}
+
+async function saveTarget(userId, year, rate) {
+  const annualHrs = parseFloat(document.getElementById(`annual-hrs-${userId}`).value) || 1800;
+  const annualAmt = parseFloat(document.getElementById(`annual-amt-${userId}`).value) || annualHrs * rate;
+  const monthlyHrs = parseFloat(document.getElementById(`monthly-hrs-${userId}`).value) || 150;
+  try {
+    await api.put('/api/billing/targets', { user_id: userId, year, target_hours: annualHrs, target_amount: annualAmt });
+    await api.put('/api/billing/targets', { user_id: userId, year, month: new Date().getMonth() + 1, target_hours: monthlyHrs, target_amount: monthlyHrs * rate });
+    showToast('Target saved');
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function saveFirmInfo() {
+  try {
+    await api.put('/api/billing/settings', {
+      firm_name: document.getElementById('firm_name').value,
+      currency: document.getElementById('currency').value,
+      currency_symbol: document.getElementById('currency_symbol').value,
+    });
+    showToast('Firm information saved');
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function saveBillingParams() {
+  try {
+    await api.put('/api/billing/settings', {
+      default_tax_rate: document.getElementById('default_tax_rate').value,
+      payment_terms_days: document.getElementById('payment_terms_days').value,
+      invoice_prefix: document.getElementById('invoice_prefix').value,
+      fiscal_year_start: document.getElementById('fiscal_year_start').value,
+      overtime_threshold: document.getElementById('overtime_threshold').value,
+    });
+    showToast('Billing parameters saved');
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function saveTargetSettings() {
+  try {
+    await api.put('/api/billing/settings', {
+      annual_billable_target: document.getElementById('annual_billable_target').value,
+    });
+    showToast('Target settings saved');
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+init();
+</script>
+</body>
+</html>

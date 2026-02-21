@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clients — LexTrack</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">⚖️</div><h1>LexTrack <span id="sidebar-firm-name">Law Firm</span></h1></div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Management</div>
+      <nav class="sidebar-nav">
+        <a href="/management/dashboard.html"><span class="nav-icon">📊</span> Firm Dashboard</a>
+        <a href="/management/time-review.html"><span class="nav-icon">✅</span> Time Approval</a>
+        <a href="/management/reports.html"><span class="nav-icon">📈</span> Reports</a>
+      </nav>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Configuration</div>
+      <nav class="sidebar-nav">
+        <a href="/management/clients.html" class="active"><span class="nav-icon">👥</span> Clients</a>
+        <a href="/management/matters.html"><span class="nav-icon">📁</span> Matters</a>
+        <a href="/management/billing-config.html"><span class="nav-icon">⚙️</span> Billing Config</a>
+        <a href="/management/lawyers.html"><span class="nav-icon">👔</span> Lawyers</a>
+      </nav>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebar-user-avatar">MS</div>
+      <div class="user-info"><div class="user-name" id="sidebar-user-name">Loading...</div><div class="user-role" id="sidebar-user-role">manager</div></div>
+      <button class="logout-btn" onclick="logout()">↪</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div><h2>Clients</h2><div class="page-subtitle">Manage firm clients</div></div>
+      <div class="header-actions">
+        <button class="btn btn-gold" onclick="openModal('client-modal')">＋ New Client</button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Contact</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th class="text-right">Matters</th>
+                <th class="text-right">Total Billed</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="clients-body">
+              <tr><td colspan="9"><div class="empty-state"><div class="empty-icon">⏳</div><p>Loading...</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Client Modal -->
+<div class="modal-overlay" id="client-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 id="client-modal-title">New Client</h3>
+      <button class="modal-close" onclick="closeModal('client-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="client-form">
+        <input type="hidden" id="client-id" />
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Client Name <span class="required">*</span></label>
+            <input type="text" id="client-name" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Client Type</label>
+            <select id="client-type" class="form-control">
+              <option value="individual">Individual</option>
+              <option value="corporate">Corporate</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Contact Person</label>
+            <input type="text" id="client-contact" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tax ID / EIN</label>
+            <input type="text" id="client-tax-id" class="form-control" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="client-email" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input type="tel" id="client-phone" class="form-control" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Address</label>
+          <textarea id="client-address" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea id="client-notes" class="form-control" rows="2"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('client-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveClient()">Save Client</button>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/js/common.js"></script>
+<script>
+let allClients = [];
+
+async function init() {
+  const user = await loadCurrentUser();
+  if (!user) return;
+  if (user.role === 'lawyer') { window.location.href = '/lawyer/dashboard.html'; return; }
+  initSidebarUser(user);
+  await loadClients();
+}
+
+async function loadClients() {
+  try {
+    allClients = await api.get('/api/clients');
+    const tbody = document.getElementById('clients-body');
+    if (allClients.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">👥</div><h4>No clients yet</h4><p>Add your first client</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = allClients.map(c => `
+      <tr>
+        <td>
+          <div class="fw-semibold">${c.name}</div>
+          ${c.tax_id ? `<div class="text-sm text-muted">EIN: ${c.tax_id}</div>` : ''}
+        </td>
+        <td><span class="tag">${c.client_type}</span></td>
+        <td class="text-sm">${c.contact_person || '—'}</td>
+        <td class="text-sm">${c.email ? `<a href="mailto:${c.email}" style="color:var(--blue)">${c.email}</a>` : '—'}</td>
+        <td class="text-sm">${c.phone || '—'}</td>
+        <td class="text-right"><span class="fw-bold">${c.open_matters || 0}</span> <span class="text-muted text-sm">/ ${c.total_matters || 0}</span></td>
+        <td class="text-right fw-semibold">${c.total_billed > 0 ? fmt.currency(c.total_billed) : '—'}</td>
+        <td><span class="badge ${c.is_active ? 'badge-open' : 'badge-closed'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
+        <td><button class="btn btn-ghost btn-sm" onclick="editClient('${c.id}')">✏️</button></td>
+      </tr>
+    `).join('');
+  } catch (err) { showToast('Failed to load clients', 'error'); }
+}
+
+function editClient(id) {
+  const c = allClients.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('client-modal-title').textContent = 'Edit Client';
+  document.getElementById('client-id').value = c.id;
+  document.getElementById('client-name').value = c.name;
+  document.getElementById('client-type').value = c.client_type;
+  document.getElementById('client-contact').value = c.contact_person || '';
+  document.getElementById('client-tax-id').value = c.tax_id || '';
+  document.getElementById('client-email').value = c.email || '';
+  document.getElementById('client-phone').value = c.phone || '';
+  document.getElementById('client-address').value = c.address || '';
+  document.getElementById('client-notes').value = c.notes || '';
+  openModal('client-modal');
+}
+
+async function saveClient() {
+  const id = document.getElementById('client-id').value;
+  const payload = {
+    name: document.getElementById('client-name').value,
+    client_type: document.getElementById('client-type').value,
+    contact_person: document.getElementById('client-contact').value,
+    tax_id: document.getElementById('client-tax-id').value,
+    email: document.getElementById('client-email').value,
+    phone: document.getElementById('client-phone').value,
+    address: document.getElementById('client-address').value,
+    notes: document.getElementById('client-notes').value,
+  };
+  if (!payload.name) { showToast('Name is required', 'warning'); return; }
+  try {
+    if (id) await api.put(`/api/clients/${id}`, payload);
+    else await api.post('/api/clients', payload);
+    closeModal('client-modal');
+    document.getElementById('client-id').value = '';
+    document.getElementById('client-form').reset();
+    document.getElementById('client-modal-title').textContent = 'New Client';
+    showToast('Client saved');
+    await loadClients();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+init();
+</script>
+</body>
+</html>

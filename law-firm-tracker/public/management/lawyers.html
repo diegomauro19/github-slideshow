@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lawyers — LexTrack</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">⚖️</div><h1>LexTrack <span id="sidebar-firm-name">Law Firm</span></h1></div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Management</div>
+      <nav class="sidebar-nav">
+        <a href="/management/dashboard.html"><span class="nav-icon">📊</span> Firm Dashboard</a>
+        <a href="/management/time-review.html"><span class="nav-icon">✅</span> Time Approval</a>
+        <a href="/management/reports.html"><span class="nav-icon">📈</span> Reports</a>
+      </nav>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Configuration</div>
+      <nav class="sidebar-nav">
+        <a href="/management/clients.html"><span class="nav-icon">👥</span> Clients</a>
+        <a href="/management/matters.html"><span class="nav-icon">📁</span> Matters</a>
+        <a href="/management/billing-config.html"><span class="nav-icon">⚙️</span> Billing Config</a>
+        <a href="/management/lawyers.html" class="active"><span class="nav-icon">👔</span> Lawyers</a>
+      </nav>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebar-user-avatar">MS</div>
+      <div class="user-info"><div class="user-name" id="sidebar-user-name">Loading...</div><div class="user-role" id="sidebar-user-role">manager</div></div>
+      <button class="logout-btn" onclick="logout()">↪</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div><h2>Lawyers</h2><div class="page-subtitle">Manage lawyers, titles, and billing rates</div></div>
+    </div>
+
+    <div class="page-body">
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Title</th>
+                <th>Practice Area</th>
+                <th>Bar Number</th>
+                <th class="text-right">Default Rate</th>
+                <th class="text-right">YTD Hours</th>
+                <th class="text-right">YTD Billed</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="lawyers-body">
+              <tr><td colspan="9"><div class="empty-state"><div class="empty-icon">⏳</div><p>Loading...</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Edit Lawyer Modal -->
+<div class="modal-overlay" id="lawyer-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Edit Lawyer</h3>
+      <button class="modal-close" onclick="closeModal('lawyer-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="lawyer-id" />
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" id="lawyer-name" class="form-control" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <select id="lawyer-title" class="form-control">
+            <option>Associate</option>
+            <option>Senior Associate</option>
+            <option>Of Counsel</option>
+            <option>Partner</option>
+            <option>Senior Partner</option>
+            <option>Managing Partner</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bar Number</label>
+          <input type="text" id="lawyer-bar" class="form-control" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Practice Area</label>
+        <select id="lawyer-pa" class="form-control">
+          <option value="">None</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Default Hourly Rate ($)</label>
+        <input type="number" id="lawyer-rate" class="form-control" step="25" min="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select id="lawyer-active" class="form-control">
+          <option value="1">Active</option>
+          <option value="0">Inactive</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('lawyer-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveLawyer()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/js/common.js"></script>
+<script>
+let allLawyers = [];
+let practiceAreas = [];
+
+async function init() {
+  const user = await loadCurrentUser();
+  if (!user) return;
+  if (user.role === 'lawyer') { window.location.href = '/lawyer/dashboard.html'; return; }
+  initSidebarUser(user);
+
+  practiceAreas = await api.get('/api/billing/practice-areas');
+  const paSel = document.getElementById('lawyer-pa');
+  practiceAreas.forEach(pa => { paSel.innerHTML += `<option value="${pa.id}">${pa.name}</option>`; });
+
+  await loadLawyers();
+}
+
+async function loadLawyers() {
+  try {
+    allLawyers = await api.get('/api/billing/users');
+    const tbody = document.getElementById('lawyers-body');
+    const lawyers = allLawyers.filter(u => u.role !== 'admin');
+
+    if (lawyers.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><p>No lawyers found</p></div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = lawyers.map(u => `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="user-avatar" style="width:34px;height:34px;font-size:12px;background:${u.role === 'manager' ? 'var(--gold)' : 'var(--navy)'};color:${u.role === 'manager' ? 'var(--navy)' : 'white'}">${fmt.initials(u.full_name)}</div>
+            <div>
+              <div class="fw-semibold">${u.full_name}</div>
+              <div class="text-sm text-muted">${u.email}</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="tag">${u.title || u.role}</span></td>
+        <td class="text-sm">${u.practice_area_name || '—'}</td>
+        <td class="font-mono text-sm">${u.bar_number || '—'}</td>
+        <td class="text-right fw-bold">$${u.default_hourly_rate}/hr</td>
+        <td class="text-right">${fmt.hours(u.ytd_billable_hours)}</td>
+        <td class="text-right">${fmt.currency(u.ytd_billed_amount)}</td>
+        <td><span class="badge ${u.is_active ? 'badge-open' : 'badge-closed'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+        <td><button class="btn btn-ghost btn-sm" onclick="editLawyer('${u.id}')">✏️</button></td>
+      </tr>
+    `).join('');
+  } catch (err) { showToast('Failed to load lawyers', 'error'); }
+}
+
+function editLawyer(id) {
+  const u = allLawyers.find(x => x.id === id);
+  if (!u) return;
+  document.getElementById('lawyer-id').value = u.id;
+  document.getElementById('lawyer-name').value = u.full_name;
+  document.getElementById('lawyer-title').value = u.title || 'Associate';
+  document.getElementById('lawyer-bar').value = u.bar_number || '';
+  document.getElementById('lawyer-pa').value = u.practice_area_id || '';
+  document.getElementById('lawyer-rate').value = u.default_hourly_rate;
+  document.getElementById('lawyer-active').value = u.is_active ? '1' : '0';
+  openModal('lawyer-modal');
+}
+
+async function saveLawyer() {
+  const id = document.getElementById('lawyer-id').value;
+  try {
+    await api.put(`/api/billing/users/${id}`, {
+      full_name: document.getElementById('lawyer-name').value,
+      title: document.getElementById('lawyer-title').value,
+      bar_number: document.getElementById('lawyer-bar').value,
+      practice_area_id: document.getElementById('lawyer-pa').value || null,
+      default_hourly_rate: parseFloat(document.getElementById('lawyer-rate').value) || 0,
+      is_active: parseInt(document.getElementById('lawyer-active').value),
+    });
+    closeModal('lawyer-modal');
+    showToast('Lawyer updated');
+    await loadLawyers();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+init();
+</script>
+</body>
+</html>

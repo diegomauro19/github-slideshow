@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time Approval — LexTrack</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">⚖️</div><h1>LexTrack <span id="sidebar-firm-name">Law Firm</span></h1></div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Management</div>
+      <nav class="sidebar-nav">
+        <a href="/management/dashboard.html"><span class="nav-icon">📊</span> Firm Dashboard</a>
+        <a href="/management/time-review.html" class="active"><span class="nav-icon">✅</span> Time Approval</a>
+        <a href="/management/reports.html"><span class="nav-icon">📈</span> Reports</a>
+      </nav>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Configuration</div>
+      <nav class="sidebar-nav">
+        <a href="/management/clients.html"><span class="nav-icon">👥</span> Clients</a>
+        <a href="/management/matters.html"><span class="nav-icon">📁</span> Matters</a>
+        <a href="/management/billing-config.html"><span class="nav-icon">⚙️</span> Billing Config</a>
+        <a href="/management/lawyers.html"><span class="nav-icon">👔</span> Lawyers</a>
+      </nav>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebar-user-avatar">MS</div>
+      <div class="user-info"><div class="user-name" id="sidebar-user-name">Loading...</div><div class="user-role" id="sidebar-user-role">manager</div></div>
+      <button class="logout-btn" onclick="logout()">↪</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h2>Time Approval</h2>
+        <div class="page-subtitle">Review and approve submitted time entries</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-success" id="approve-btn" onclick="bulkAction('approve')" style="display:none">
+          ✅ Approve Selected (<span id="selected-count">0</span>)
+        </button>
+        <button class="btn btn-danger" id="reject-btn" onclick="bulkAction('reject')" style="display:none">
+          ✕ Return Selected
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <select id="filter-lawyer">
+        <option value="">All Lawyers</option>
+      </select>
+      <input type="date" id="filter-start" />
+      <input type="date" id="filter-end" />
+      <select id="filter-matter">
+        <option value="">All Matters</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="loadEntries()">🔍 Filter</button>
+      <div style="margin-left:auto;font-size:13px;color:var(--gray-500)">
+        <strong id="entry-count">0</strong> entries · <strong id="total-hours">0h</strong> · <strong id="total-billed">$0</strong>
+      </div>
+    </div>
+
+    <div class="page-body" style="padding-top:16px">
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th class="checkbox-col"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)" /></th>
+                <th>Date</th>
+                <th>Lawyer</th>
+                <th>Matter / Client</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th class="text-right">Hours</th>
+                <th class="text-right">Billed</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="entries-body">
+              <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⏳</div><p>Loading...</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/assets/js/common.js"></script>
+<script>
+let allEntries = [];
+let selectedIds = new Set();
+
+async function init() {
+  const user = await loadCurrentUser();
+  if (!user) return;
+  if (user.role === 'lawyer') { window.location.href = '/lawyer/dashboard.html'; return; }
+  initSidebarUser(user);
+
+  const now = new Date();
+  document.getElementById('filter-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  document.getElementById('filter-end').value = now.toISOString().split('T')[0];
+
+  await Promise.all([loadLawyers(), loadMatters()]);
+  await loadEntries();
+}
+
+async function loadLawyers() {
+  try {
+    const lawyers = await api.get('/api/billing/users');
+    const sel = document.getElementById('filter-lawyer');
+    lawyers.filter(u => u.role === 'lawyer').forEach(u => {
+      sel.innerHTML += `<option value="${u.id}">${u.full_name}</option>`;
+    });
+  } catch {}
+}
+
+async function loadMatters() {
+  try {
+    const matters = await api.get('/api/matters');
+    const sel = document.getElementById('filter-matter');
+    matters.forEach(m => { sel.innerHTML += `<option value="${m.id}">[${m.matter_number}] ${m.name}</option>`; });
+  } catch {}
+}
+
+async function loadEntries() {
+  try {
+    const params = { status: document.getElementById('filter-matter').value ? undefined : 'submitted' };
+    const lawyer = document.getElementById('filter-lawyer').value;
+    const start = document.getElementById('filter-start').value;
+    const end = document.getElementById('filter-end').value;
+    const matter = document.getElementById('filter-matter').value;
+    if (lawyer) params.user_id = lawyer;
+    if (start) params.start_date = start;
+    if (end) params.end_date = end;
+    if (matter) params.matter_id = matter;
+    if (!matter) params.status = 'submitted';
+
+    allEntries = await api.get('/api/time-entries', params);
+    renderEntries();
+    updateTotals();
+  } catch (err) { showToast('Failed to load entries: ' + err.message, 'error'); }
+}
+
+function renderEntries() {
+  const tbody = document.getElementById('entries-body');
+  if (allEntries.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">✅</div><h4>All caught up!</h4><p>No entries pending review</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = allEntries.map(e => `
+    <tr class="${selectedIds.has(e.id) ? 'selected' : ''}" id="row-${e.id}">
+      <td class="checkbox-col"><input type="checkbox" ${selectedIds.has(e.id) ? 'checked' : ''} onchange="toggleSelect('${e.id}', this)" /></td>
+      <td class="text-sm">${fmt.date(e.entry_date)}</td>
+      <td>
+        <div class="fw-semibold">${e.user_name}</div>
+        <div class="text-sm text-muted">${e.user_title || ''}</div>
+      </td>
+      <td>
+        <div class="fw-semibold text-sm">${e.matter_number}</div>
+        <div class="text-sm text-muted">${e.client_name}</div>
+      </td>
+      <td class="truncate" style="max-width:220px" title="${e.description}">${e.description}</td>
+      <td><span class="badge badge-${e.activity_type}">${fmt.activityType(e.activity_type)}</span></td>
+      <td class="text-right fw-bold">${fmt.hours(e.hours)}</td>
+      <td class="text-right">${e.billed_amount > 0 ? fmt.currency(e.billed_amount) : '—'}</td>
+      <td><span class="badge badge-${e.status}">${fmt.status(e.status)}</span></td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-success btn-sm" onclick="approveOne('${e.id}')">✅</button>
+          <button class="btn btn-outline btn-sm" onclick="rejectOne('${e.id}')">↩</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateTotals() {
+  document.getElementById('entry-count').textContent = allEntries.length;
+  document.getElementById('total-hours').textContent = fmt.hours(allEntries.reduce((s, e) => s + e.hours, 0));
+  document.getElementById('total-billed').textContent = fmt.currency(allEntries.reduce((s, e) => s + e.billed_amount, 0));
+}
+
+function toggleSelect(id, cb) {
+  if (cb.checked) selectedIds.add(id);
+  else selectedIds.delete(id);
+  document.getElementById(`row-${id}`).classList.toggle('selected', cb.checked);
+  updateBulkUI();
+}
+
+function toggleSelectAll(cb) {
+  allEntries.forEach(e => {
+    if (cb.checked) selectedIds.add(e.id);
+    else selectedIds.delete(e.id);
+    const rowCb = document.querySelector(`#row-${e.id} input[type=checkbox]`);
+    if (rowCb) rowCb.checked = cb.checked;
+    document.getElementById(`row-${e.id}`)?.classList.toggle('selected', cb.checked);
+  });
+  updateBulkUI();
+}
+
+function updateBulkUI() {
+  const n = selectedIds.size;
+  document.getElementById('selected-count').textContent = n;
+  document.getElementById('approve-btn').style.display = n > 0 ? 'flex' : 'none';
+  document.getElementById('reject-btn').style.display = n > 0 ? 'flex' : 'none';
+}
+
+async function approveOne(id) {
+  await api.post('/api/dashboard/approve', { ids: [id], action: 'approve' });
+  showToast('Entry approved');
+  await loadEntries();
+}
+
+async function rejectOne(id) {
+  await api.post('/api/dashboard/approve', { ids: [id], action: 'reject' });
+  showToast('Entry returned to draft', 'warning');
+  await loadEntries();
+}
+
+async function bulkAction(action) {
+  if (selectedIds.size === 0) return;
+  try {
+    await api.post('/api/dashboard/approve', { ids: [...selectedIds], action });
+    selectedIds.clear();
+    updateBulkUI();
+    showToast(action === 'approve' ? 'Entries approved' : 'Entries returned to draft', action === 'approve' ? 'success' : 'warning');
+    await loadEntries();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+init();
+</script>
+</body>
+</html>

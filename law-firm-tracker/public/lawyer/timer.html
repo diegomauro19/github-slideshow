@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Timer — LexTrack</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+  <style>
+    .timer-page { display:flex; align-items:center; justify-content:center; min-height:calc(100vh - 80px); }
+    .timer-main {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-lg);
+      padding: 48px;
+      text-align: center;
+      max-width: 520px;
+      width: 100%;
+    }
+    .timer-clock {
+      font-size: 72px;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -2px;
+      line-height: 1;
+      margin: 20px 0;
+    }
+    .timer-clock.running { color: var(--gold-dark); }
+    .timer-controls { display:flex; gap:12px; justify-content:center; margin-top:24px; }
+    .timer-controls button { min-width: 100px; }
+    .timer-sessions { margin-top: 32px; }
+    .session-item {
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--gray-100);
+      font-size: 13px;
+    }
+    .session-item:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">⚖️</div>
+      <h1>LexTrack <span id="sidebar-firm-name">Law Firm</span></h1>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">My Work</div>
+      <nav class="sidebar-nav">
+        <a href="/lawyer/dashboard.html"><span class="nav-icon">📊</span> My Dashboard</a>
+        <a href="/lawyer/time-entries.html"><span class="nav-icon">⏱️</span> Time Entries</a>
+        <a href="/lawyer/timer.html" class="active"><span class="nav-icon">▶️</span> Live Timer</a>
+      </nav>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Reference</div>
+      <nav class="sidebar-nav">
+        <a href="/lawyer/matters.html"><span class="nav-icon">📁</span> My Matters</a>
+      </nav>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebar-user-avatar">JD</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-user-name">Loading...</div>
+        <div class="user-role" id="sidebar-user-role">lawyer</div>
+      </div>
+      <button class="logout-btn" onclick="logout()">↪</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h2>Live Timer</h2>
+        <div class="page-subtitle">Track time in real-time and log automatically</div>
+      </div>
+    </div>
+
+    <div class="page-body timer-page">
+      <div>
+        <div class="timer-main">
+          <div style="font-size:13px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.06em">Elapsed Time</div>
+          <div class="timer-clock" id="timer-display">00:00:00</div>
+
+          <div class="form-group" style="text-align:left;margin-bottom:12px">
+            <label class="form-label">Matter <span class="required">*</span></label>
+            <select id="timer-matter" class="form-control">
+              <option value="">Select a matter...</option>
+            </select>
+          </div>
+          <div class="form-group" style="text-align:left;margin-bottom:12px">
+            <label class="form-label">Activity Type</label>
+            <select id="timer-activity" class="form-control">
+              <option value="billable">Billable</option>
+              <option value="non_billable">Non-Billable</option>
+              <option value="pro_bono">Pro Bono</option>
+              <option value="admin">Administrative</option>
+            </select>
+          </div>
+          <div class="form-group" style="text-align:left">
+            <label class="form-label">Description</label>
+            <input type="text" id="timer-description" class="form-control" placeholder="What are you working on?" />
+          </div>
+
+          <div class="timer-controls">
+            <button class="btn btn-gold btn-lg" id="start-btn" onclick="startTimer()">▶ Start</button>
+            <button class="btn btn-outline btn-lg" id="pause-btn" onclick="pauseTimer()" style="display:none">⏸ Pause</button>
+            <button class="btn btn-primary btn-lg" id="save-btn" onclick="saveTimer()" style="display:none">💾 Save Entry</button>
+            <button class="btn btn-ghost btn-lg" id="reset-btn" onclick="resetTimer()" style="display:none">↺ Reset</button>
+          </div>
+          <div id="timer-status" style="margin-top:12px;font-size:12px;color:var(--gray-400)"></div>
+        </div>
+
+        <!-- Today's sessions -->
+        <div class="card" style="margin-top:20px;max-width:520px">
+          <div class="card-header"><h3>Today's Sessions</h3></div>
+          <div class="card-body">
+            <div id="today-sessions">
+              <div class="empty-state" style="padding:16px">
+                <p>No sessions recorded today</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/assets/js/common.js"></script>
+<script>
+let timer = null;
+let sessions = JSON.parse(sessionStorage.getItem('timer-sessions') || '[]');
+let startTime = null;
+let elapsed = 0;
+let running = false;
+let paused = false;
+let intervalId = null;
+
+async function init() {
+  const user = await loadCurrentUser();
+  if (!user) return;
+  if (['manager', 'admin'].includes(user.role)) {
+    window.location.href = '/management/dashboard.html';
+    return;
+  }
+  initSidebarUser(user);
+
+  // Load matters
+  try {
+    const matters = await api.get('/api/matters');
+    const sel = document.getElementById('timer-matter');
+    matters.forEach(m => {
+      sel.innerHTML += `<option value="${m.id}">[${m.matter_number}] ${m.name} — ${m.client_name}</option>`;
+    });
+  } catch {}
+
+  // Restore timer state
+  const saved = sessionStorage.getItem('active-timer');
+  if (saved) {
+    const state = JSON.parse(saved);
+    elapsed = state.elapsed || 0;
+    document.getElementById('timer-matter').value = state.matter || '';
+    document.getElementById('timer-activity').value = state.activity || 'billable';
+    document.getElementById('timer-description').value = state.desc || '';
+    if (state.running) {
+      startTime = Date.now() - elapsed * 1000;
+      startInterval();
+    } else {
+      updateDisplay(elapsed);
+      showPaused();
+    }
+  }
+
+  renderSessions();
+}
+
+function startInterval() {
+  running = true;
+  paused = false;
+  intervalId = setInterval(() => {
+    elapsed = Math.floor((Date.now() - startTime) / 1000);
+    updateDisplay(elapsed);
+    saveState();
+  }, 1000);
+  showRunning();
+}
+
+function startTimer() {
+  if (!document.getElementById('timer-matter').value) {
+    showToast('Please select a matter first', 'warning');
+    return;
+  }
+  startTime = Date.now() - elapsed * 1000;
+  startInterval();
+}
+
+function pauseTimer() {
+  clearInterval(intervalId);
+  running = false;
+  paused = true;
+  saveState();
+  showPaused();
+}
+
+function resetTimer() {
+  clearInterval(intervalId);
+  running = false; paused = false; elapsed = 0;
+  updateDisplay(0);
+  sessionStorage.removeItem('active-timer');
+  document.getElementById('start-btn').style.display = '';
+  document.getElementById('pause-btn').style.display = 'none';
+  document.getElementById('save-btn').style.display = 'none';
+  document.getElementById('reset-btn').style.display = 'none';
+  document.getElementById('timer-display').className = 'timer-clock';
+  document.getElementById('timer-status').textContent = '';
+}
+
+async function saveTimer() {
+  const matter = document.getElementById('timer-matter').value;
+  const desc = document.getElementById('timer-description').value || 'Time tracked via timer';
+  const activity = document.getElementById('timer-activity').value;
+
+  if (!matter) { showToast('Please select a matter', 'warning'); return; }
+  if (elapsed < 60) { showToast('Minimum 1 minute required', 'warning'); return; }
+
+  const hours = Math.max(0.25, Math.round((elapsed / 3600) * 4) / 4);
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  try {
+    const entry = await api.post('/api/time-entries', {
+      matter_id: matter,
+      entry_date: todayISO(),
+      hours,
+      description: desc,
+      activity_type: activity,
+    });
+
+    sessions.push({
+      matter: document.querySelector('#timer-matter option:checked')?.text || '',
+      hours,
+      desc,
+      activity,
+      time: new Date().toLocaleTimeString(),
+    });
+    sessionStorage.setItem('timer-sessions', JSON.stringify(sessions));
+
+    resetTimer();
+    renderSessions();
+    showToast(`Saved ${fmt.hours(hours)} — entry ready in Time Entries`);
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Save Entry';
+  }
+}
+
+function updateDisplay(secs) {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  document.getElementById('timer-display').textContent =
+    `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function showRunning() {
+  document.getElementById('start-btn').style.display = 'none';
+  document.getElementById('pause-btn').style.display = '';
+  document.getElementById('save-btn').style.display = '';
+  document.getElementById('reset-btn').style.display = '';
+  document.getElementById('timer-display').className = 'timer-clock running';
+  document.getElementById('timer-status').textContent = '● Recording...';
+}
+
+function showPaused() {
+  document.getElementById('start-btn').style.display = '';
+  document.getElementById('start-btn').textContent = '▶ Resume';
+  document.getElementById('pause-btn').style.display = 'none';
+  document.getElementById('save-btn').style.display = '';
+  document.getElementById('reset-btn').style.display = '';
+  document.getElementById('timer-display').className = 'timer-clock';
+  document.getElementById('timer-status').textContent = '⏸ Paused';
+}
+
+function saveState() {
+  sessionStorage.setItem('active-timer', JSON.stringify({
+    elapsed, running,
+    matter: document.getElementById('timer-matter').value,
+    activity: document.getElementById('timer-activity').value,
+    desc: document.getElementById('timer-description').value,
+  }));
+}
+
+function renderSessions() {
+  const el = document.getElementById('today-sessions');
+  if (sessions.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:16px"><p>No sessions recorded today</p></div>';
+    return;
+  }
+  el.innerHTML = sessions.map((s, i) => `
+    <div class="session-item">
+      <div>
+        <div class="fw-semibold" style="font-size:13px">${s.matter}</div>
+        <div class="text-muted text-sm">${s.desc}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="badge badge-${s.activity}">${fmt.activityType(s.activity)}</span>
+        <span class="fw-bold">${fmt.hours(s.hours)}</span>
+        <span class="text-muted text-sm">${s.time}</span>
+      </div>
+    </div>
+  `).reverse().join('');
+}
+
+init();
+</script>
+</body>
+</html>

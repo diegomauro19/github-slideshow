@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Management Dashboard — LexTrack</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- Management Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">⚖️</div>
+      <h1>LexTrack <span id="sidebar-firm-name">Law Firm</span></h1>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Management</div>
+      <nav class="sidebar-nav">
+        <a href="/management/dashboard.html" class="active">
+          <span class="nav-icon">📊</span> Firm Dashboard
+        </a>
+        <a href="/management/time-review.html">
+          <span class="nav-icon">✅</span> Time Approval
+          <span class="nav-badge" id="approval-badge" style="display:none">0</span>
+        </a>
+        <a href="/management/reports.html">
+          <span class="nav-icon">📈</span> Reports
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Configuration</div>
+      <nav class="sidebar-nav">
+        <a href="/management/clients.html"><span class="nav-icon">👥</span> Clients</a>
+        <a href="/management/matters.html"><span class="nav-icon">📁</span> Matters</a>
+        <a href="/management/billing-config.html"><span class="nav-icon">⚙️</span> Billing Config</a>
+        <a href="/management/lawyers.html"><span class="nav-icon">👔</span> Lawyers</a>
+      </nav>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">My Work</div>
+      <nav class="sidebar-nav">
+        <a href="/lawyer/time-entries.html"><span class="nav-icon">⏱️</span> My Time</a>
+      </nav>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebar-user-avatar">MS</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-user-name">Loading...</div>
+        <div class="user-role" id="sidebar-user-role">manager</div>
+      </div>
+      <button class="logout-btn" onclick="logout()" title="Sign out">↪</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h2>Firm Dashboard</h2>
+        <div class="page-subtitle" id="dashboard-subtitle">Loading...</div>
+      </div>
+      <div class="header-actions">
+        <a href="/management/time-review.html" class="btn btn-outline" id="approval-btn" style="display:none">
+          ✅ Review Entries (<span id="approval-count">0</span>)
+        </a>
+        <a href="/management/reports.html" class="btn btn-gold">📈 Reports</a>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <!-- KPI Stats -->
+      <div class="stats-grid" id="kpi-grid">
+        <div class="stat-card">
+          <div class="stat-header"><span class="stat-label">Month Billable Hours</span><div class="stat-icon navy">⏱️</div></div>
+          <div class="stat-value" id="kpi-month-hours">—</div>
+          <div class="stat-sub" id="kpi-month-util">utilization rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header"><span class="stat-label">Month Revenue</span><div class="stat-icon gold">💰</div></div>
+          <div class="stat-value" id="kpi-month-billed">—</div>
+          <div class="stat-change" id="kpi-month-change"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header"><span class="stat-label">YTD Revenue</span><div class="stat-icon green">📈</div></div>
+          <div class="stat-value" id="kpi-ytd-billed">—</div>
+          <div class="stat-sub" id="kpi-ytd-hours">— billable hours</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header"><span class="stat-label">Active Lawyers</span><div class="stat-icon blue">👔</div></div>
+          <div class="stat-value" id="kpi-lawyers">—</div>
+          <div class="stat-sub">billing this month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header"><span class="stat-label">Open Matters</span><div class="stat-icon amber">📁</div></div>
+          <div class="stat-value" id="kpi-matters">—</div>
+          <div class="stat-sub" id="kpi-matters-sub">active cases</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header"><span class="stat-label">Pending Approvals</span><div class="stat-icon red">📋</div></div>
+          <div class="stat-value" id="kpi-pending">—</div>
+          <div class="stat-sub">entries awaiting review</div>
+        </div>
+      </div>
+
+      <!-- Charts Row 1 -->
+      <div class="grid-cols-3-2 mb-6">
+        <div class="card">
+          <div class="card-header">
+            <h3>Monthly Revenue Trend (12 months)</h3>
+          </div>
+          <div class="card-body">
+            <div class="chart-container" style="height:240px">
+              <canvas id="trend-chart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Billing Models (Open Matters)</h3></div>
+          <div class="card-body">
+            <div style="display:flex;gap:16px;align-items:center">
+              <div style="width:180px;height:180px;flex-shrink:0">
+                <canvas id="billing-model-chart"></canvas>
+              </div>
+              <div id="billing-model-legend" class="donut-legend"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row 2 -->
+      <div class="grid-2 mb-6">
+        <div class="card">
+          <div class="card-header"><h3>Lawyer Utilization — This Month</h3></div>
+          <div class="card-body">
+            <div id="lawyer-util"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Top Clients by Revenue (YTD)</h3></div>
+          <div class="card-body">
+            <div id="top-clients"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lawyer Performance Table -->
+      <div class="card mb-6">
+        <div class="card-header">
+          <h3>Lawyer Performance — <span id="month-label">This Month</span></h3>
+          <div class="card-actions">
+            <a href="/management/reports.html" class="btn btn-outline btn-sm">Full Report</a>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Lawyer</th>
+                <th>Title</th>
+                <th class="text-right">Total Hours</th>
+                <th class="text-right">Billable Hours</th>
+                <th class="text-right">Utilization</th>
+                <th class="text-right">Revenue</th>
+                <th class="text-right">vs Target</th>
+              </tr>
+            </thead>
+            <tbody id="lawyer-perf-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Practice Area Stats -->
+      <div class="card">
+        <div class="card-header"><h3>Practice Area Revenue (YTD)</h3></div>
+        <div class="card-body">
+          <div id="practice-area-stats"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/assets/js/common.js"></script>
+<script>
+let trendChart = null;
+let modelChart = null;
+
+async function init() {
+  const user = await loadCurrentUser();
+  if (!user) return;
+  if (user.role === 'lawyer') { window.location.href = '/lawyer/dashboard.html'; return; }
+  initSidebarUser(user);
+
+  // Load firm name
+  try {
+    const settings = await api.get('/api/billing/settings');
+    if (settings.firm_name) {
+      document.getElementById('sidebar-firm-name').textContent = settings.firm_name.value;
+    }
+  } catch {}
+
+  await loadDashboard();
+}
+
+async function loadDashboard() {
+  try {
+    const data = await api.get('/api/dashboard/management');
+    const now = new Date();
+    document.getElementById('dashboard-subtitle').textContent =
+      now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('month-label').textContent =
+      now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    renderKPIs(data);
+    renderTrendChart(data.monthly_trend);
+    renderBillingModelChart(data.matters_by_model);
+    renderLawyerUtilization(data.lawyer_performance);
+    renderTopClients(data.top_clients);
+    renderLawyerPerformance(data.lawyer_performance);
+    renderPracticeAreaStats(data.practice_area_stats);
+
+    // Pending approvals badge
+    if (data.pending_approvals > 0) {
+      document.getElementById('approval-badge').textContent = data.pending_approvals;
+      document.getElementById('approval-badge').style.display = 'inline';
+      document.getElementById('approval-btn').style.display = 'flex';
+      document.getElementById('approval-count').textContent = data.pending_approvals;
+    }
+  } catch (err) {
+    showToast('Failed to load dashboard: ' + err.message, 'error');
+  }
+}
+
+function renderKPIs(d) {
+  const m = d.month_totals || {};
+  const pm = d.prev_month_totals || {};
+  const ytd = d.ytd_totals || {};
+  const ms = d.matters_summary || {};
+
+  document.getElementById('kpi-month-hours').textContent = fmt.hours(m.billable_hours);
+  const util = m.total_hours > 0 ? (m.billable_hours / m.total_hours * 100) : 0;
+  document.getElementById('kpi-month-util').textContent = fmt.pct(util) + ' utilization';
+  document.getElementById('kpi-month-billed').textContent = fmt.currency(m.total_billed);
+  document.getElementById('kpi-ytd-billed').textContent = fmt.currency(ytd.total_billed);
+  document.getElementById('kpi-ytd-hours').textContent = fmt.hours(ytd.billable_hours) + ' billable hours';
+  document.getElementById('kpi-lawyers').textContent = m.active_lawyers || 0;
+  document.getElementById('kpi-matters').textContent = ms.open || 0;
+  document.getElementById('kpi-matters-sub').textContent = `${ms.total || 0} total, ${ms.closed || 0} closed`;
+  document.getElementById('kpi-pending').textContent = d.pending_approvals;
+
+  // Month change
+  const changeEl = document.getElementById('kpi-month-change');
+  if (pm.total_billed > 0) {
+    const change = ((m.total_billed - pm.total_billed) / pm.total_billed * 100);
+    changeEl.className = `stat-change ${change >= 0 ? 'up' : 'down'}`;
+    changeEl.textContent = `${change >= 0 ? '↑' : '↓'} ${Math.abs(change).toFixed(1)}% vs last month`;
+  }
+}
+
+function renderTrendChart(data) {
+  if (!data || data.length === 0) return;
+  const labels = data.map(d => {
+    const [y, m] = d.month.split('-');
+    return new Date(y, m-1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+  });
+  if (trendChart) trendChart.destroy();
+  const ctx = document.getElementById('trend-chart').getContext('2d');
+  trendChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Revenue ($)',
+          data: data.map(d => d.total_billed),
+          backgroundColor: 'rgba(201,168,76,0.8)',
+          borderRadius: 4,
+          yAxisID: 'y',
+        },
+        {
+          label: 'Billable Hours',
+          data: data.map(d => d.billable_hours),
+          type: 'line',
+          borderColor: '#1a2744',
+          backgroundColor: 'transparent',
+          tension: 0.3,
+          pointRadius: 4,
+          pointBackgroundColor: '#1a2744',
+          yAxisID: 'y1',
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { beginAtZero: true, position: 'left', grid: { color: '#f0f2f5' }, ticks: { font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k' } },
+        y1: { beginAtZero: true, position: 'right', grid: { display: false }, ticks: { font: { size: 10 }, callback: v => v + 'h' } },
+      }
+    }
+  });
+}
+
+function renderBillingModelChart(data) {
+  if (!data || data.length === 0) return;
+  const labels = data.map(d => fmt.billingModel(d.billing_model));
+  const values = data.map(d => d.count);
+  const colors = ['#1a2744', '#c9a84c', '#12b76a', '#2563eb', '#f79009'];
+
+  if (modelChart) modelChart.destroy();
+  const ctx = document.getElementById('billing-model-chart').getContext('2d');
+  modelChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+    options: {
+      responsive: false,
+      plugins: { legend: { display: false } },
+      cutout: '65%',
+    }
+  });
+
+  const legend = document.getElementById('billing-model-legend');
+  legend.innerHTML = data.map((d, i) => `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${colors[i]}"></div>
+      <div>
+        <div class="fw-semibold" style="font-size:13px">${fmt.billingModel(d.billing_model)}</div>
+        <div class="text-muted text-sm">${d.count} matters</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderLawyerUtilization(lawyers) {
+  const el = document.getElementById('lawyer-util');
+  if (!lawyers || lawyers.length === 0) { el.innerHTML = '<div class="empty-state"><p>No data</p></div>'; return; }
+  const colors = CHART_COLORS;
+  el.innerHTML = lawyers.map((l, i) => {
+    const target = l.monthly_target || 150;
+    const pct = Math.min(100, (l.billable_hours / target) * 100);
+    return `
+    <div class="utilization-row">
+      <div class="util-name" title="${l.full_name}">${l.full_name.split(' ')[0]}</div>
+      <div class="util-bar">
+        <div class="util-fill" style="width:${pct.toFixed(0)}%;background:${pct >= 100 ? '#12b76a' : pct < 50 ? '#f04438' : colors[i % colors.length]}"></div>
+      </div>
+      <div class="util-pct">${pct.toFixed(0)}%</div>
+    </div>
+    `;
+  }).join('');
+}
+
+function renderTopClients(clients) {
+  const el = document.getElementById('top-clients');
+  if (!clients || clients.length === 0) { el.innerHTML = '<div class="empty-state"><p>No data</p></div>'; return; }
+  const maxBilled = Math.max(...clients.map(c => c.total_billed));
+  el.innerHTML = clients.map((c, i) => `
+    <div class="utilization-row">
+      <div class="util-name" title="${c.client_name}">${c.client_name}</div>
+      <div class="util-bar">
+        <div class="util-fill" style="width:${(c.total_billed/maxBilled*100).toFixed(0)}%;background:${CHART_COLORS[i % CHART_COLORS.length]}"></div>
+      </div>
+      <div style="width:70px;text-align:right;font-size:12px;font-weight:600">${fmt.currency(c.total_billed)}</div>
+    </div>
+  `).join('');
+}
+
+function renderLawyerPerformance(lawyers) {
+  const tbody = document.getElementById('lawyer-perf-body');
+  if (!lawyers || lawyers.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>No data</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lawyers.map(l => {
+    const util = l.total_hours > 0 ? (l.billable_hours / l.total_hours * 100) : 0;
+    const target = l.monthly_target || 150;
+    const vsTarget = ((l.billable_hours - target) / target * 100);
+    const utilColor = util >= 80 ? 'var(--green)' : util >= 60 ? 'var(--amber)' : 'var(--red)';
+    return `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="user-avatar" style="width:30px;height:30px;font-size:11px;background:var(--gray-200);color:var(--gray-600)">${fmt.initials(l.full_name)}</div>
+          <span class="fw-semibold">${l.full_name}</span>
+        </div>
+      </td>
+      <td class="text-sm text-muted">${l.title || '—'}</td>
+      <td class="text-right">${fmt.hours(l.total_hours)}</td>
+      <td class="text-right fw-bold">${fmt.hours(l.billable_hours)}</td>
+      <td class="text-right"><span style="color:${utilColor};font-weight:700">${fmt.pct(util)}</span></td>
+      <td class="text-right fw-semibold">${fmt.currency(l.total_billed)}</td>
+      <td class="text-right">
+        <span style="color:${vsTarget >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600">
+          ${vsTarget >= 0 ? '↑' : '↓'} ${Math.abs(vsTarget).toFixed(0)}%
+        </span>
+      </td>
+    </tr>
+    `;
+  }).join('');
+}
+
+function renderPracticeAreaStats(areas) {
+  const el = document.getElementById('practice-area-stats');
+  if (!areas || areas.length === 0) { el.innerHTML = '<div class="empty-state"><p>No data</p></div>'; return; }
+  const maxBilled = Math.max(...areas.map(a => a.total_billed));
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+      ${areas.map((a, i) => `
+        <div style="padding:12px 0;border-bottom:1px solid var(--gray-100)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span class="fw-semibold" style="font-size:13px">${a.name}</span>
+            <span class="fw-bold" style="font-size:13px;color:var(--navy)">${fmt.currency(a.total_billed)}</span>
+          </div>
+          <div class="progress-bar" style="margin-top:4px">
+            <div class="progress-fill" style="width:${(a.total_billed/maxBilled*100).toFixed(0)}%;background:${CHART_COLORS[i % CHART_COLORS.length]}"></div>
+          </div>
+          <div class="text-sm text-muted" style="margin-top:4px">${fmt.hours(a.billable_hours)} billable</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+init();
+</script>
+</body>
+</html>

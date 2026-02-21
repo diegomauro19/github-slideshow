@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LexTrack — Law Firm Time Manager</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+  <style>
+    .demo-cred code { cursor: pointer; }
+    .particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .particle { position: absolute; width: 2px; height: 2px; background: rgba(201,168,76,0.3); border-radius: 50%; animation: float linear infinite; }
+    @keyframes float { 0% { transform: translateY(100vh) translateX(0); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(-100px) translateX(20px); opacity: 0; } }
+  </style>
+</head>
+<body>
+  <div class="login-page" style="position:relative">
+    <div class="particles" id="particles"></div>
+    <div class="login-card" style="position:relative;z-index:1">
+      <div class="login-header">
+        <div class="login-logo">⚖️</div>
+        <h1>LexTrack</h1>
+        <p>Law Firm Time & Billing Management</p>
+      </div>
+      <div class="login-body">
+        <div class="login-error" id="login-error"></div>
+        <form id="login-form">
+          <div class="form-group">
+            <label class="form-label" for="email">Email Address</label>
+            <input type="email" id="email" class="form-control" placeholder="you@sterling.law" autocomplete="email" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <div style="position:relative">
+              <input type="password" id="password" class="form-control" placeholder="••••••••" autocomplete="current-password" required />
+              <button type="button" id="toggle-pw" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:16px">👁</button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-full btn-lg" id="login-btn" style="width:100%">
+            Sign In to LexTrack
+          </button>
+        </form>
+
+        <div class="login-demo">
+          <p>Demo Credentials (click to fill)</p>
+          <div class="demo-cred">
+            <span>Manager / Admin</span>
+            <div style="display:flex;gap:6px">
+              <code onclick="fillCreds('manager@sterling.law','manager123')">manager@sterling.law</code>
+              <code onclick="fillCreds('manager@sterling.law','manager123')">manager123</code>
+            </div>
+          </div>
+          <div class="demo-cred" style="margin-top:4px">
+            <span>Lawyer (James)</span>
+            <div style="display:flex;gap:6px">
+              <code onclick="fillCreds('james@sterling.law','lawyer123')">james@sterling.law</code>
+              <code onclick="fillCreds('james@sterling.law','lawyer123')">lawyer123</code>
+            </div>
+          </div>
+          <div class="demo-cred" style="margin-top:4px">
+            <span>Lawyer (Sarah)</span>
+            <div style="display:flex;gap:6px">
+              <code onclick="fillCreds('sarah@sterling.law','lawyer123')">sarah@sterling.law</code>
+              <code onclick="fillCreds('sarah@sterling.law','lawyer123')">lawyer123</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Check if already logged in
+    fetch('/api/auth/me', { credentials: 'same-origin' }).then(r => {
+      if (r.ok) return r.json();
+    }).then(user => {
+      if (user) redirectUser(user.role);
+    }).catch(() => {});
+
+    function redirectUser(role) {
+      if (['manager', 'admin'].includes(role)) {
+        window.location.href = '/management/dashboard.html';
+      } else {
+        window.location.href = '/lawyer/dashboard.html';
+      }
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const errEl = document.getElementById('login-error');
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            email: document.getElementById('email').value.trim(),
+            password: document.getElementById('password').value,
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
+        redirectUser(data.user.role);
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Sign In to LexTrack';
+      }
+    });
+
+    document.getElementById('toggle-pw').addEventListener('click', () => {
+      const pw = document.getElementById('password');
+      pw.type = pw.type === 'password' ? 'text' : 'password';
+    });
+
+    function fillCreds(email, pw) {
+      document.getElementById('email').value = email;
+      document.getElementById('password').value = pw;
+    }
+
+    // Decorative particles
+    const pc = document.getElementById('particles');
+    for (let i = 0; i < 20; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.animationDuration = (Math.random() * 10 + 8) + 's';
+      p.style.animationDelay = (Math.random() * 10) + 's';
+      p.style.width = p.style.height = (Math.random() * 3 + 1) + 'px';
+      pc.appendChild(p);
+    }
+  </script>
+</body>
+</html>
