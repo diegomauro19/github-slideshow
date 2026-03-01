@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Star Trek Voyager Tetris</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+    :root {
+      --lcars-orange: #FF9900;
+      --lcars-gold: #FFCC00;
+      --lcars-blue: #9999FF;
+      --lcars-light-blue: #99CCFF;
+      --lcars-purple: #CC99FF;
+      --lcars-red: #FF6666;
+      --lcars-green: #66FF99;
+      --lcars-teal: #33CCCC;
+      --lcars-bg: #000000;
+      --lcars-panel: #111122;
+      --lcars-text: #FFAA00;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--lcars-bg);
+      font-family: 'Orbitron', monospace;
+      color: var(--lcars-text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── LCARS Header ─────────────────────────────────────── */
+    .lcars-header {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      align-items: stretch;
+      height: 70px;
+      margin-bottom: 4px;
+    }
+
+    .lcars-header .corner-tl {
+      width: 120px;
+      background: var(--lcars-orange);
+      border-radius: 40px 0 0 0;
+      flex-shrink: 0;
+    }
+
+    .lcars-header .top-bar {
+      flex: 1;
+      background: var(--lcars-orange);
+      display: flex;
+      align-items: flex-end;
+      padding-bottom: 6px;
+      padding-left: 20px;
+    }
+
+    .lcars-header .title-block {
+      background: var(--lcars-bg);
+      color: var(--lcars-orange);
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      padding: 8px 24px;
+      border-radius: 8px 8px 0 0;
+      white-space: nowrap;
+    }
+
+    .lcars-header .corner-tr {
+      width: 80px;
+      background: var(--lcars-blue);
+      border-radius: 0 40px 0 0;
+      flex-shrink: 0;
+    }
+
+    /* ── LCARS Sub-bar ────────────────────────────────────── */
+    .lcars-subbar {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      height: 10px;
+      margin-bottom: 6px;
+    }
+
+    .lcars-subbar .left-fill { width: 120px; background: var(--lcars-orange); flex-shrink: 0; }
+    .lcars-subbar .gap { width: 10px; background: var(--lcars-bg); flex-shrink: 0; }
+    .lcars-subbar .mid-fill { flex: 1; background: var(--lcars-gold); }
+    .lcars-subbar .gap2 { width: 10px; background: var(--lcars-bg); flex-shrink: 0; }
+    .lcars-subbar .right-fill { width: 80px; background: var(--lcars-purple); flex-shrink: 0; }
+
+    /* ── Main Layout ──────────────────────────────────────── */
+    .main-layout {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      gap: 0;
+      align-items: flex-start;
+    }
+
+    /* ── Left LCARS Panel ─────────────────────────────────── */
+    .left-panel {
+      width: 120px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .lcars-btn {
+      background: var(--lcars-orange);
+      color: #000;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.55rem;
+      font-weight: 700;
+      text-align: right;
+      padding: 8px 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s;
+      width: 100%;
+    }
+    .lcars-btn:hover { opacity: 0.8; }
+    .lcars-btn.blue { background: var(--lcars-blue); }
+    .lcars-btn.purple { background: var(--lcars-purple); }
+    .lcars-btn.gold { background: var(--lcars-gold); }
+    .lcars-btn.red { background: var(--lcars-red); }
+    .lcars-btn.teal { background: var(--lcars-teal); }
+    .lcars-btn.green { background: var(--lcars-green); }
+
+    .lcars-elbow {
+      width: 120px;
+      height: 60px;
+      background: var(--lcars-orange);
+      border-radius: 0 0 0 40px;
+      flex-shrink: 0;
+      margin-top: auto;
+    }
+
+    /* ── Game Area ────────────────────────────────────────── */
+    .game-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 10px;
+    }
+
+    #gameCanvas {
+      border: 2px solid var(--lcars-blue);
+      background: #000510;
+      display: block;
+      box-shadow: 0 0 20px rgba(153,153,255,0.3), inset 0 0 30px rgba(0,5,20,0.8);
+    }
+
+    .game-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.88);
+      border: 2px solid var(--lcars-orange);
+      border-radius: 4px;
+      padding: 24px 36px;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .game-message h2 {
+      font-size: 1.2rem;
+      color: var(--lcars-orange);
+      letter-spacing: 3px;
+      margin-bottom: 12px;
+    }
+
+    .game-message p {
+      font-size: 0.65rem;
+      color: var(--lcars-blue);
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    /* ── Right Panel ──────────────────────────────────────── */
+    .right-panel {
+      width: 180px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .info-card {
+      background: var(--lcars-panel);
+      border-left: 4px solid var(--lcars-blue);
+      padding: 8px 10px;
+    }
+
+    .info-card.orange { border-color: var(--lcars-orange); }
+    .info-card.purple { border-color: var(--lcars-purple); }
+    .info-card.gold   { border-color: var(--lcars-gold); }
+    .info-card.green  { border-color: var(--lcars-green); }
+    .info-card.teal   { border-color: var(--lcars-teal); }
+
+    .info-label {
+      font-size: 0.48rem;
+      color: var(--lcars-blue);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.2rem;
+      color: var(--lcars-orange);
+      letter-spacing: 2px;
+    }
+
+    .info-value.small { font-size: 0.7rem; }
+
+    #nextCanvas {
+      background: #000510;
+      border: 1px solid var(--lcars-blue);
+      display: block;
+      margin-top: 6px;
+    }
+
+    /* ── Piece Guide ──────────────────────────────────────── */
+    .piece-guide {
+      margin-top: 6px;
+    }
+
+    .piece-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .piece-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .piece-name {
+      font-size: 0.48rem;
+      color: #aaa;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* ── Controls ─────────────────────────────────────────── */
+    .controls-info {
+      margin-top: 6px;
+    }
+
+    .ctrl-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.45rem;
+      color: #888;
+      letter-spacing: 1px;
+      margin-bottom: 3px;
+    }
+
+    .ctrl-key {
+      color: var(--lcars-gold);
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    /* ── LCARS Footer ─────────────────────────────────────── */
+    .lcars-footer {
+      width: 100%;
+      max-width: 900px;
+      margin-top: 6px;
+      display: flex;
+      height: 40px;
+    }
+
+    .lcars-footer .elbow-bl {
+      width: 120px;
+      background: var(--lcars-orange);
+      border-radius: 0 0 0 40px;
+      flex-shrink: 0;
+    }
+
+    .lcars-footer .gap { width: 10px; background: var(--lcars-bg); flex-shrink: 0; }
+
+    .lcars-footer .bottom-bar {
+      flex: 1;
+      background: var(--lcars-orange);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+    }
+
+    .lcars-footer .status-text {
+      font-size: 0.5rem;
+      color: #000;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .lcars-footer .elbow-br {
+      width: 80px;
+      background: var(--lcars-blue);
+      border-radius: 0 0 40px 0;
+      flex-shrink: 0;
+    }
+
+    /* ── Star field ───────────────────────────────────────── */
+    #starfield {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+
+<!-- LCARS Header -->
+<div class="lcars-header">
+  <div class="corner-tl"></div>
+  <div class="top-bar">
+    <div class="title-block">Star Trek Voyager &mdash; Tetris</div>
+  </div>
+  <div class="corner-tr"></div>
+</div>
+
+<!-- LCARS Sub-bar -->
+<div class="lcars-subbar">
+  <div class="left-fill"></div>
+  <div class="gap"></div>
+  <div class="mid-fill"></div>
+  <div class="gap2"></div>
+  <div class="right-fill"></div>
+</div>
+
+<!-- Main game layout -->
+<div class="main-layout">
+
+  <!-- Left LCARS panel -->
+  <div class="left-panel">
+    <button class="lcars-btn" id="btnStart">Engage</button>
+    <button class="lcars-btn blue" id="btnPause">Pause</button>
+    <button class="lcars-btn red" id="btnReset">Reset</button>
+    <div style="height: 12px;"></div>
+    <div class="lcars-btn purple" style="cursor:default;">Stardate</div>
+    <div style="font-family:'Share Tech Mono';font-size:0.6rem;color:var(--lcars-purple);text-align:right;padding-right:10px;" id="stardate">47634.44</div>
+    <div style="height: 12px;"></div>
+    <div class="lcars-btn gold" style="cursor:default; font-size:0.5rem;">Quadrant</div>
+    <div style="font-size:0.5rem;color:var(--lcars-gold);text-align:right;padding-right:10px;letter-spacing:1px;">DELTA</div>
+    <div style="height: 12px;"></div>
+    <div class="lcars-btn teal" style="cursor:default;">Warp</div>
+    <div style="font-family:'Share Tech Mono';font-size:0.6rem;color:var(--lcars-teal);text-align:right;padding-right:10px;" id="warpDisplay">9.975</div>
+    <div style="height: 12px;"></div>
+    <div class="lcars-btn green" style="cursor:default;">Crew</div>
+    <div style="font-family:'Share Tech Mono';font-size:0.6rem;color:var(--lcars-green);text-align:right;padding-right:10px;">141</div>
+  </div>
+
+  <!-- Game canvas -->
+  <div class="game-area">
+    <div class="canvas-wrapper">
+      <canvas id="gameCanvas" width="300" height="600"></canvas>
+      <div class="game-message" id="gameMessage">
+        <h2>USS VOYAGER</h2>
+        <p>NCC-74656</p>
+        <p>Intrepid-class Starship</p>
+        <p style="margin-top:12px; color:var(--lcars-orange);">PRESS ENGAGE TO BEGIN</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right info panel -->
+  <div class="right-panel">
+
+    <div class="info-card orange">
+      <div class="info-label">Score</div>
+      <div class="info-value" id="scoreDisplay">000000</div>
+    </div>
+
+    <div class="info-card purple">
+      <div class="info-label">Level</div>
+      <div class="info-value" id="levelDisplay">01</div>
+    </div>
+
+    <div class="info-card gold">
+      <div class="info-label">Lines</div>
+      <div class="info-value" id="linesDisplay">000</div>
+    </div>
+
+    <div class="info-card teal">
+      <div class="info-label">Next Piece</div>
+      <canvas id="nextCanvas" width="120" height="80"></canvas>
+      <div style="font-size:0.5rem; color:var(--lcars-teal); letter-spacing:1px; margin-top:4px; text-transform:uppercase;" id="nextName">-</div>
+    </div>
+
+    <div class="info-card green">
+      <div class="info-label">Piece Guide</div>
+      <div class="piece-guide" id="pieceGuide"></div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-label">Controls</div>
+      <div class="controls-info">
+        <div class="ctrl-row"><span class="ctrl-key">← →</span><span>Move</span></div>
+        <div class="ctrl-row"><span class="ctrl-key">↑ / Z</span><span>Rotate</span></div>
+        <div class="ctrl-row"><span class="ctrl-key">↓</span><span>Soft Drop</span></div>
+        <div class="ctrl-row"><span class="ctrl-key">Space</span><span>Hard Drop</span></div>
+        <div class="ctrl-row"><span class="ctrl-key">P</span><span>Pause</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- LCARS Footer -->
+<div class="lcars-footer">
+  <div class="elbow-bl"></div>
+  <div class="gap"></div>
+  <div class="bottom-bar">
+    <span class="status-text" id="statusText">LCARS — AWAITING COMMAND</span>
+  </div>
+  <div class="elbow-br"></div>
+</div>
+
+<script>
+// ── Star Trek Voyager Tetris ──────────────────────────────────────────────────
+
+// ── Piece Definitions ─────────────────────────────────────────────────────────
+// Each piece is a Star Trek Voyager themed tetromino
+const PIECES = [
+  {
+    name: 'USS Voyager',
+    subtitle: 'Intrepid-class',
+    color: '#4488FF',
+    glow: 'rgba(68,136,255,0.6)',
+    shape: [[1,1,1,1]]  // I – the long starship
+  },
+  {
+    name: 'Borg Cube',
+    subtitle: 'Unimatrix 01',
+    color: '#44FF88',
+    glow: 'rgba(68,255,136,0.6)',
+    shape: [[1,1],[1,1]]  // O – perfect cube
+  },
+  {
+    name: 'Delta Flyer',
+    subtitle: 'Type-2 Shuttle',
+    color: '#FF8800',
+    glow: 'rgba(255,136,0,0.6)',
+    shape: [[0,1,0],[1,1,1]]  // T – wing shape
+  },
+  {
+    name: 'Kazon Warship',
+    subtitle: 'Nistrim sect',
+    color: '#FF4444',
+    glow: 'rgba(255,68,68,0.6)',
+    shape: [[0,1,1],[1,1,0]]  // S
+  },
+  {
+    name: 'Species 8472',
+    subtitle: 'Undine vessel',
+    color: '#CC44FF',
+    glow: 'rgba(204,68,255,0.6)',
+    shape: [[1,1,0],[0,1,1]]  // Z
+  },
+  {
+    name: 'Starfleet Comm.',
+    subtitle: 'Combadge mk VII',
+    color: '#FFDD00',
+    glow: 'rgba(255,221,0,0.6)',
+    shape: [[1,0,0],[1,1,1]]  // L – wing silhouette
+  },
+  {
+    name: 'Warp Core',
+    subtitle: 'Dilithium-driven',
+    color: '#00CCFF',
+    glow: 'rgba(0,204,255,0.6)',
+    shape: [[0,0,1],[1,1,1]]  // J
+  }
+];
+
+// ── Game Constants ────────────────────────────────────────────────────────────
+const COLS = 10;
+const ROWS = 20;
+const BLOCK = 30;
+const CANVAS_W = COLS * BLOCK;
+const CANVAS_H = ROWS * BLOCK;
+
+// Points awarded per lines cleared (× level multiplier)
+const LINE_SCORES = [0, 100, 300, 500, 800];
+
+// Speed curve: ms per drop per level
+function getDropInterval(level) {
+  return Math.max(80, 800 - (level - 1) * 70);
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let board = [];
+let currentPiece = null;
+let nextPiece = null;
+let score = 0;
+let lines = 0;
+let level = 1;
+let gameRunning = false;
+let gamePaused = false;
+let animId = null;
+let lastTime = 0;
+let dropCounter = 0;
+let lockDelay = 0;
+let lockDelayLimit = 500;
+
+// ── Canvas Setup ──────────────────────────────────────────────────────────────
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const nextCanvas = document.getElementById('nextCanvas');
+const nCtx = nextCanvas.getContext('2d');
+
+// ── Starfield Background ──────────────────────────────────────────────────────
+(function initStars() {
+  const sc = document.getElementById('starfield');
+  sc.width = window.innerWidth;
+  sc.height = window.innerHeight;
+  const sCtx = sc.getContext('2d');
+  const stars = Array.from({length: 200}, () => ({
+    x: Math.random() * sc.width,
+    y: Math.random() * sc.height,
+    r: Math.random() * 1.5,
+    alpha: Math.random() * 0.8 + 0.2,
+    speed: Math.random() * 0.15 + 0.02
+  }));
+
+  function drawStars() {
+    sCtx.clearRect(0, 0, sc.width, sc.height);
+    stars.forEach(s => {
+      sCtx.beginPath();
+      sCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      sCtx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+      sCtx.fill();
+      s.y += s.speed;
+      if (s.y > sc.height) { s.y = 0; s.x = Math.random() * sc.width; }
+    });
+    requestAnimationFrame(drawStars);
+  }
+  drawStars();
+
+  window.addEventListener('resize', () => {
+    sc.width = window.innerWidth;
+    sc.height = window.innerHeight;
+  });
+})();
+
+// ── Board ─────────────────────────────────────────────────────────────────────
+function createBoard() {
+  return Array.from({length: ROWS}, () => Array(COLS).fill(0));
+}
+
+// ── Piece Factory ─────────────────────────────────────────────────────────────
+function createPiece(def) {
+  const shape = def.shape.map(row => [...row]);
+  const col = Math.floor((COLS - shape[0].length) / 2);
+  return { def, shape, row: 0, col };
+}
+
+function randomPiece() {
+  return createPiece(PIECES[Math.floor(Math.random() * PIECES.length)]);
+}
+
+// ── Rotation ──────────────────────────────────────────────────────────────────
+function rotate(shape, dir = 1) {
+  const rows = shape.length, cols = shape[0].length;
+  const result = Array.from({length: cols}, () => Array(rows).fill(0));
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++)
+      if (dir === 1) result[c][rows - 1 - r] = shape[r][c];
+      else result[cols - 1 - c][r] = shape[r][c];
+  return result;
+}
+
+// ── Collision ─────────────────────────────────────────────────────────────────
+function collides(piece, dr = 0, dc = 0, shape = piece.shape) {
+  for (let r = 0; r < shape.length; r++)
+    for (let c = 0; c < shape[r].length; c++)
+      if (shape[r][c]) {
+        const nr = piece.row + r + dr;
+        const nc = piece.col + c + dc;
+        if (nr >= ROWS || nc < 0 || nc >= COLS) return true;
+        if (nr >= 0 && board[nr][nc]) return true;
+      }
+  return false;
+}
+
+// ── Wall Kick ─────────────────────────────────────────────────────────────────
+function tryRotate(dir) {
+  if (!currentPiece || !gameRunning || gamePaused) return;
+  const newShape = rotate(currentPiece.shape, dir);
+  const kicks = [0, -1, 1, -2, 2];
+  for (const kick of kicks) {
+    if (!collides(currentPiece, 0, kick, newShape)) {
+      currentPiece.shape = newShape;
+      currentPiece.col += kick;
+      lockDelay = 0;
+      return;
+    }
+  }
+}
+
+// ── Lock Piece ────────────────────────────────────────────────────────────────
+function lockPiece() {
+  for (let r = 0; r < currentPiece.shape.length; r++)
+    for (let c = 0; c < currentPiece.shape[r].length; c++)
+      if (currentPiece.shape[r][c]) {
+        const br = currentPiece.row + r;
+        const bc = currentPiece.col + c;
+        if (br < 0) { endGame(); return; }
+        board[br][bc] = currentPiece.def;
+      }
+
+  clearLines();
+  spawnNext();
+}
+
+// ── Clear Lines ───────────────────────────────────────────────────────────────
+function clearLines() {
+  let cleared = 0;
+  for (let r = ROWS - 1; r >= 0; r--) {
+    if (board[r].every(cell => cell !== 0)) {
+      board.splice(r, 1);
+      board.unshift(Array(COLS).fill(0));
+      cleared++;
+      r++; // re-check same row index
+    }
+  }
+  if (cleared > 0) {
+    const pts = LINE_SCORES[cleared] * level;
+    score += pts;
+    lines += cleared;
+    level = Math.floor(lines / 10) + 1;
+    updateHUD();
+    flashLines();
+  }
+}
+
+let flashActive = false;
+function flashLines() {
+  flashActive = true;
+  setTimeout(() => { flashActive = false; }, 150);
+}
+
+// ── Spawn ─────────────────────────────────────────────────────────────────────
+function spawnNext() {
+  currentPiece = nextPiece || randomPiece();
+  nextPiece = randomPiece();
+  lockDelay = 0;
+  drawNext();
+  if (collides(currentPiece)) { endGame(); }
+}
+
+// ── Ghost Piece ───────────────────────────────────────────────────────────────
+function getGhostRow() {
+  let dr = 0;
+  while (!collides(currentPiece, dr + 1)) dr++;
+  return currentPiece.row + dr;
+}
+
+// ── Hard Drop ─────────────────────────────────────────────────────────────────
+function hardDrop() {
+  if (!gameRunning || gamePaused || !currentPiece) return;
+  while (!collides(currentPiece, 1)) {
+    currentPiece.row++;
+    score += 2;
+  }
+  updateHUD();
+  lockPiece();
+  dropCounter = 0;
+}
+
+// ── Game Loop ─────────────────────────────────────────────────────────────────
+function gameLoop(timestamp) {
+  const delta = timestamp - lastTime;
+  lastTime = timestamp;
+
+  if (!gamePaused) {
+    dropCounter += delta;
+    if (dropCounter >= getDropInterval(level)) {
+      dropCounter = 0;
+      if (!collides(currentPiece, 1)) {
+        currentPiece.row++;
+        lockDelay = 0;
+      } else {
+        lockDelay += delta;
+        if (lockDelay >= lockDelayLimit) {
+          lockDelay = 0;
+          lockPiece();
+        }
+      }
+    }
+  }
+
+  draw();
+  animId = requestAnimationFrame(gameLoop);
+}
+
+// ── Drawing ───────────────────────────────────────────────────────────────────
+function drawBlock(context, x, y, def, alpha = 1) {
+  const bx = x * BLOCK, by = y * BLOCK;
+  const color = def.color;
+  const glow = def.glow;
+
+  context.save();
+  context.globalAlpha = alpha;
+
+  // glow
+  context.shadowColor = glow;
+  context.shadowBlur = 10;
+
+  // gradient fill
+  const grad = context.createLinearGradient(bx, by, bx + BLOCK, by + BLOCK);
+  grad.addColorStop(0, lighten(color, 0.4));
+  grad.addColorStop(1, color);
+  context.fillStyle = grad;
+  context.fillRect(bx + 1, by + 1, BLOCK - 2, BLOCK - 2);
+
+  // highlight
+  context.shadowBlur = 0;
+  context.fillStyle = 'rgba(255,255,255,0.15)';
+  context.fillRect(bx + 1, by + 1, BLOCK - 2, 5);
+  context.fillRect(bx + 1, by + 1, 5, BLOCK - 2);
+
+  // border
+  context.strokeStyle = lighten(color, 0.6);
+  context.lineWidth = 1;
+  context.strokeRect(bx + 1, by + 1, BLOCK - 2, BLOCK - 2);
+
+  context.restore();
+}
+
+function lighten(hex, factor) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, Math.round(((n >> 16) & 0xff) * (1 + factor)));
+  const g = Math.min(255, Math.round(((n >> 8)  & 0xff) * (1 + factor)));
+  const b = Math.min(255, Math.round(( n        & 0xff) * (1 + factor)));
+  return `rgb(${r},${g},${b})`;
+}
+
+function draw() {
+  // Background
+  ctx.fillStyle = '#000510';
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+  // Subtle grid
+  ctx.strokeStyle = 'rgba(50,80,120,0.25)';
+  ctx.lineWidth = 0.5;
+  for (let r = 0; r < ROWS; r++) {
+    ctx.beginPath(); ctx.moveTo(0, r * BLOCK); ctx.lineTo(CANVAS_W, r * BLOCK); ctx.stroke();
+  }
+  for (let c = 0; c < COLS; c++) {
+    ctx.beginPath(); ctx.moveTo(c * BLOCK, 0); ctx.lineTo(c * BLOCK, CANVAS_H); ctx.stroke();
+  }
+
+  // Placed blocks
+  if (flashActive) {
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+  }
+
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c]) drawBlock(ctx, c, r, board[r][c]);
+
+  // Ghost piece
+  if (currentPiece && gameRunning && !gamePaused) {
+    const ghostRow = getGhostRow();
+    for (let r = 0; r < currentPiece.shape.length; r++)
+      for (let c = 0; c < currentPiece.shape[r].length; c++)
+        if (currentPiece.shape[r][c]) {
+          const gr = ghostRow + r;
+          const gc = currentPiece.col + c;
+          ctx.save();
+          ctx.globalAlpha = 0.18;
+          ctx.fillStyle = currentPiece.def.color;
+          ctx.fillRect(gc * BLOCK + 1, gr * BLOCK + 1, BLOCK - 2, BLOCK - 2);
+          ctx.strokeStyle = currentPiece.def.color;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(gc * BLOCK + 1, gr * BLOCK + 1, BLOCK - 2, BLOCK - 2);
+          ctx.restore();
+        }
+
+    // Current piece
+    for (let r = 0; r < currentPiece.shape.length; r++)
+      for (let c = 0; c < currentPiece.shape[r].length; c++)
+        if (currentPiece.shape[r][c])
+          drawBlock(ctx, currentPiece.col + c, currentPiece.row + r, currentPiece.def);
+  }
+}
+
+function drawNext() {
+  nCtx.fillStyle = '#000510';
+  nCtx.fillRect(0, 0, 120, 80);
+
+  if (!nextPiece) return;
+
+  const s = nextPiece.shape;
+  const bSize = 20;
+  const offX = Math.floor((120 - s[0].length * bSize) / 2);
+  const offY = Math.floor((80  - s.length    * bSize) / 2);
+
+  for (let r = 0; r < s.length; r++)
+    for (let c = 0; c < s[r].length; c++)
+      if (s[r][c]) {
+        const px = offX + c * bSize;
+        const py = offY + r * bSize;
+
+        nCtx.save();
+        nCtx.shadowColor = nextPiece.def.glow;
+        nCtx.shadowBlur = 8;
+        const grad = nCtx.createLinearGradient(px, py, px + bSize, py + bSize);
+        grad.addColorStop(0, lighten(nextPiece.def.color, 0.4));
+        grad.addColorStop(1, nextPiece.def.color);
+        nCtx.fillStyle = grad;
+        nCtx.fillRect(px + 1, py + 1, bSize - 2, bSize - 2);
+        nCtx.strokeStyle = lighten(nextPiece.def.color, 0.6);
+        nCtx.lineWidth = 1;
+        nCtx.strokeRect(px + 1, py + 1, bSize - 2, bSize - 2);
+        nCtx.restore();
+      }
+
+  document.getElementById('nextName').textContent = nextPiece.def.name;
+}
+
+// ── HUD ───────────────────────────────────────────────────────────────────────
+function updateHUD() {
+  document.getElementById('scoreDisplay').textContent = String(score).padStart(6, '0');
+  document.getElementById('levelDisplay').textContent = String(level).padStart(2, '0');
+  document.getElementById('linesDisplay').textContent = String(lines).padStart(3, '0');
+  document.getElementById('warpDisplay').textContent = (9 + Math.min(0.975, level * 0.075)).toFixed(3);
+  updateStardate();
+}
+
+function updateStardate() {
+  const base = 47634;
+  const frac = ((score / 100) % 100).toFixed(2);
+  document.getElementById('stardate').textContent = `${base + Math.floor(score/500)}.${frac.replace('.', '')}`;
+}
+
+// ── Piece Guide ───────────────────────────────────────────────────────────────
+function buildPieceGuide() {
+  const guide = document.getElementById('pieceGuide');
+  guide.innerHTML = '';
+  PIECES.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'piece-row';
+    const swatch = document.createElement('div');
+    swatch.className = 'piece-swatch';
+    swatch.style.background = p.color;
+    swatch.style.boxShadow = `0 0 4px ${p.glow}`;
+    const name = document.createElement('div');
+    name.className = 'piece-name';
+    name.textContent = p.name;
+    row.appendChild(swatch);
+    row.appendChild(name);
+    guide.appendChild(row);
+  });
+}
+
+// ── Game Control ──────────────────────────────────────────────────────────────
+function startGame() {
+  board = createBoard();
+  score = 0; lines = 0; level = 1;
+  updateHUD();
+  gameRunning = true;
+  gamePaused = false;
+  currentPiece = randomPiece();
+  nextPiece = randomPiece();
+  drawNext();
+  hideMessage();
+  setStatus('NAVIGATIONAL SYSTEMS ONLINE — ENGAGE WARP DRIVE');
+  if (animId) cancelAnimationFrame(animId);
+  lastTime = performance.now();
+  dropCounter = 0;
+  animId = requestAnimationFrame(gameLoop);
+}
+
+function pauseGame() {
+  if (!gameRunning) return;
+  gamePaused = !gamePaused;
+  if (gamePaused) {
+    showMessage('PAUSED', 'Systems on standby', 'PRESS P TO RESUME');
+    setStatus('SYSTEMS PAUSED — YELLOW ALERT');
+  } else {
+    hideMessage();
+    setStatus('SYSTEMS RESUMED — WARP DRIVE ENGAGED');
+  }
+}
+
+function resetGame() {
+  if (animId) cancelAnimationFrame(animId);
+  gameRunning = false;
+  gamePaused = false;
+  board = createBoard();
+  currentPiece = null;
+  nextPiece = null;
+  score = 0; lines = 0; level = 1;
+  updateHUD();
+  draw();
+  nCtx.fillStyle = '#000510';
+  nCtx.fillRect(0, 0, 120, 80);
+  document.getElementById('nextName').textContent = '-';
+  showMessage('USS VOYAGER', 'NCC-74656', 'PRESS ENGAGE TO BEGIN');
+  setStatus('LCARS — AWAITING COMMAND');
+}
+
+function endGame() {
+  gameRunning = false;
+  cancelAnimationFrame(animId);
+  showMessage('GAME OVER', `Score: ${score}`, 'PRESS ENGAGE TO PLAY AGAIN');
+  setStatus(`RED ALERT — MISSION FAILED — FINAL SCORE: ${score}`);
+}
+
+function showMessage(title, sub, action) {
+  const msg = document.getElementById('gameMessage');
+  msg.innerHTML = `<h2>${title}</h2><p>${sub}</p><p style="margin-top:12px;color:var(--lcars-orange);">${action}</p>`;
+  msg.style.display = 'block';
+}
+
+function hideMessage() {
+  document.getElementById('gameMessage').style.display = 'none';
+}
+
+function setStatus(text) {
+  document.getElementById('statusText').textContent = `LCARS — ${text}`;
+}
+
+// ── Input ─────────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (!gameRunning) {
+    if (e.key === 'Enter' || e.key === ' ') { startGame(); return; }
+  }
+  if (e.key === 'p' || e.key === 'P') { pauseGame(); return; }
+  if (gamePaused || !gameRunning || !currentPiece) return;
+
+  switch(e.key) {
+    case 'ArrowLeft':
+      if (!collides(currentPiece, 0, -1)) { currentPiece.col--; lockDelay = 0; }
+      e.preventDefault(); break;
+    case 'ArrowRight':
+      if (!collides(currentPiece, 0, 1))  { currentPiece.col++; lockDelay = 0; }
+      e.preventDefault(); break;
+    case 'ArrowDown':
+      if (!collides(currentPiece, 1)) { currentPiece.row++; dropCounter = 0; score++; updateHUD(); }
+      e.preventDefault(); break;
+    case 'ArrowUp':
+    case 'z': case 'Z':
+      tryRotate(1); e.preventDefault(); break;
+    case 'x': case 'X':
+      tryRotate(-1); e.preventDefault(); break;
+    case ' ':
+      hardDrop(); e.preventDefault(); break;
+  }
+});
+
+// Button handlers
+document.getElementById('btnStart').addEventListener('click', startGame);
+document.getElementById('btnPause').addEventListener('click', pauseGame);
+document.getElementById('btnReset').addEventListener('click', resetGame);
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+buildPieceGuide();
+draw();
+</script>
+</body>
+</html>
