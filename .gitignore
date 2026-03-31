@@ -2,3 +2,19 @@ _site/
 .sass-cache/
 .jekyll-metadata
 .bundle
+
+# Next.js
+.next/
+out/
+
+# Node
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.production.local
+
+# OS
+.DS_Store
+Thumbs.db
