@@ -100,7 +100,7 @@ export function SessionList() {
           Wargame Sessions
         </h2>
         <Link
-          href="/wargaming?new=true"
+          href={"/wargaming?new=true" as any}
           className="inline-flex items-center gap-2 rounded-lg bg-amber/10 px-4 py-2 text-sm font-medium text-amber transition-colors hover:bg-amber/20"
         >
           <Plus className="h-4 w-4" />
@@ -116,7 +116,7 @@ export function SessionList() {
           return (
             <Link
               key={session.id}
-              href={`/wargaming/${session.id}`}
+              href={`/wargaming/${session.id}` as any}
               className="group rounded-lg border border-[#1e1e22] bg-surface p-5 transition-colors hover:border-text-dim/30"
             >
               <div className="mb-3 flex items-start justify-between gap-3">

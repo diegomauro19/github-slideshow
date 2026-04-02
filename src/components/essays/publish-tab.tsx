@@ -85,7 +85,7 @@ export function PublishTab() {
     {
       id: "x",
       label: "Post X thread",
-      icon: <Twitter className="h-3.5 w-3.5" />,
+      icon: <AtSign className="h-3.5 w-3.5" />,
       checked: true,
       status: "ready",
     },
@@ -150,7 +150,7 @@ export function PublishTab() {
         <div className="grid grid-cols-3 gap-3">
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Linkedin className="h-3.5 w-3.5 text-[#7b9fd4]" />
+              <Briefcase className="h-3.5 w-3.5 text-[#7b9fd4]" />
               <span className="text-xs font-medium text-[#9e9890]">
                 LinkedIn Post
               </span>
@@ -161,7 +161,7 @@ export function PublishTab() {
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Twitter className="h-3.5 w-3.5 text-[#7b9fd4]" />
+              <AtSign className="h-3.5 w-3.5 text-[#7b9fd4]" />
               <span className="text-xs font-medium text-[#9e9890]">
                 X Thread
               </span>

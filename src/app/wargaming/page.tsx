@@ -1,35 +1,44 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils/cn";
 import { Swords, Plus, X } from "lucide-react";
-import { SessionSetup } from "@/components/wargaming/session-setup";
 import { SessionList } from "@/components/wargaming/session-list";
+import { SessionSetup } from "@/components/wargaming/session-setup";
 
 export default function WargamingPage() {
-  const [showSetup, setShowSetup] = useState(false);
+  const searchParams = useSearchParams();
+  const [showSetup, setShowSetup] = useState(
+    searchParams.get("new") === "true"
+  );
 
   return (
     <div className="min-h-screen bg-bg px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-8">
-        {/* Hero */}
-        <div className="flex items-start justify-between">
+        {/* Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="mb-2 flex items-center gap-2">
-              <Swords className="h-5 w-5 text-amber" />
-              <h1 className="font-serif text-2xl font-semibold tracking-tight text-text">
-                Wargaming Engine
-              </h1>
-            </div>
-            <p className="max-w-xl text-sm leading-relaxed text-text-secondary">
-              Stress-test your ideas against adversarial mental models. Configure
-              actors, select analytical lenses, and run multi-round simulations
-              to discover blind spots before they become liabilities.
+            <h1 className="flex items-center gap-2 font-serif text-2xl font-semibold text-text">
+              <Swords className="h-6 w-6 text-amber" />
+              Wargaming Engine
+            </h1>
+            <p className="mt-1 max-w-xl text-sm text-text-secondary">
+              Stress-test your theses through multi-actor adversarial
+              simulations. Assign mental models, launch rounds, and surface
+              blind spots before you publish.
             </p>
           </div>
+
           <button
             type="button"
             onClick={() => setShowSetup(!showSetup)}
-            className="inline-flex items-center gap-2 rounded-lg bg-amber px-4 py-2.5 text-sm font-bold text-bg transition-colors hover:bg-amber-bright"
+            className={cn(
+              "inline-flex shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
+              showSetup
+                ? "bg-surface border border-[#1e1e22] text-text-secondary hover:text-text"
+                : "bg-amber/10 text-amber hover:bg-amber/20"
+            )}
           >
             {showSetup ? (
               <>
@@ -48,9 +57,6 @@ export default function WargamingPage() {
         {/* Setup Form */}
         {showSetup && (
           <div className="rounded-xl border border-amber/20 bg-surface p-6">
-            <h2 className="mb-6 text-base font-semibold text-text">
-              Configure Wargame
-            </h2>
             <SessionSetup />
           </div>
         )}
