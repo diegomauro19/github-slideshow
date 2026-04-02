@@ -1,0 +1,52 @@
+@import "tailwindcss";
+@config "../../../tailwind.config.ts";
+
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Libre+Franklin:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap");
+
+:root {
+  --bg: #08080a;
+  --surface: #111114;
+  --surface-raised: #18181c;
+  --text: #e8e4df;
+  --text-secondary: #9e9890;
+  --text-dim: #5e5a54;
+  --amber: #d4a843;
+  --amber-bright: #e8c05a;
+  --amber-dim: rgba(212, 168, 67, 0.08);
+  --green: #6dbf7b;
+  --red: #d47b7b;
+  --blue: #7b9fd4;
+  --purple: #b39bd4;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-text: var(--text);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-dim: var(--text-dim);
+  --color-amber: var(--amber);
+  --color-amber-bright: var(--amber-bright);
+  --color-amber-dim: var(--amber-dim);
+  --color-green: var(--green);
+  --color-red: var(--red);
+  --color-blue: var(--blue);
+  --color-purple: var(--purple);
+
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Libre Franklin", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  border-color: var(--surface-raised);
+}
