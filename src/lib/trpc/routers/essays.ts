@@ -4,7 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 
 export const essaysRouter = router({
   list: publicProcedure.query(async () => {
-    const supabase = createServerClient();
+    const supabase: any = createServerClient();
     const { data, error } = await supabase
       .from("essays")
       .select("*")
@@ -17,7 +17,7 @@ export const essaysRouter = router({
   getById: publicProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const { data, error } = await supabase
         .from("essays")
         .select("*")
@@ -39,7 +39,7 @@ export const essaysRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const { data, error } = await supabase
         .from("essays")
         .insert({
@@ -77,7 +77,7 @@ export const essaysRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, ...updates } = input;
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const { data, error } = await supabase
         .from("essays")
         .update({ ...updates, updated_at: new Date().toISOString() })
@@ -104,7 +104,7 @@ export const essaysRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const updatePayload: Record<string, unknown> = {
         status: input.status,
         updated_at: new Date().toISOString(),

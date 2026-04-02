@@ -18,7 +18,7 @@ export const insightsRouter = router({
         .optional()
     )
     .query(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       let query = supabase
         .from("insights")
         .select("*")
@@ -52,7 +52,7 @@ export const insightsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const { data, error } = await supabase
         .from("insights")
         .insert({
@@ -92,7 +92,7 @@ export const insightsRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, ...updates } = input;
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const { data, error } = await supabase
         .from("insights")
         .update({ ...updates, updated_at: new Date().toISOString() })
@@ -112,7 +112,7 @@ export const insightsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const { data, error } = await supabase
         .from("insights")
         .update({
@@ -130,7 +130,7 @@ export const insightsRouter = router({
   search: publicProcedure
     .input(z.object({ text: z.string().min(1) }))
     .query(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       // Semantic search via pgvector - requires embedding generation
       // For now, fall back to text search on title and content
       const { data, error } = await supabase

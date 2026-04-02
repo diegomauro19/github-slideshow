@@ -102,53 +102,33 @@ export async function generateDraft(
     "Follow the system prompt guidelines precisely.",
   ].join("\n");
 
-  const response = await client.messages.create({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const params: any = {
     model: SONNET_MODEL,
     max_tokens: 16384,
-    stream: true,
     system: LUMEN_DRAFT_PROMPT,
-    tools: [{ type: "web_search_20250305" }],
-    mcp_servers: mcpServers.length > 0 ? mcpServers : undefined,
+    tools: [{ type: "web_search_20250305", name: "web_search" }],
     messages: [{ role: "user", content: userMessage }],
-  } as Anthropic.MessageCreateParams);
+  };
+  if (mcpServers.length > 0) {
+    params.mcp_servers = mcpServers;
+  }
+  const response = await client.messages.create(params);
 
-  // Collect streamed response
   let fullContent = "";
-  let inputTokens = 0;
-  let outputTokens = 0;
-
-  for await (const event of response) {
-    if (
-      event.type === "content_block_delta" &&
-      event.delta.type === "text_delta"
-    ) {
-      fullContent += event.delta.text;
-    }
-    if (event.type === "message_delta") {
-      outputTokens = (event as Record<string, unknown>).usage
-        ? ((event as Record<string, unknown>).usage as Record<string, number>)
-            .output_tokens
-        : outputTokens;
-    }
-    if (event.type === "message_start") {
-      inputTokens =
-        (event as Record<string, unknown>).message &&
-        ((event as Record<string, unknown>).message as Record<string, unknown>)
-          .usage
-          ? (
-              (
-                (event as Record<string, unknown>)
-                  .message as Record<string, unknown>
-              ).usage as Record<string, number>
-            ).input_tokens
-          : 0;
+  for (const block of response.content) {
+    if (block.type === "text") {
+      fullContent += block.text;
     }
   }
 
   return {
     content: fullContent,
     model: SONNET_MODEL,
-    usage: { inputTokens, outputTokens },
+    usage: {
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+    },
   };
 }
 
@@ -165,7 +145,6 @@ export async function copyEdit(draft: string): Promise<CopyEditResult> {
   const response = await client.messages.create({
     model: SONNET_MODEL,
     max_tokens: 16384,
-    stream: true,
     system: COPY_EDIT_PROMPT,
     messages: [
       {
@@ -176,13 +155,9 @@ export async function copyEdit(draft: string): Promise<CopyEditResult> {
   });
 
   let fullContent = "";
-
-  for await (const event of response) {
-    if (
-      event.type === "content_block_delta" &&
-      event.delta.type === "text_delta"
-    ) {
-      fullContent += event.delta.text;
+  for (const block of response.content) {
+    if (block.type === "text") {
+      fullContent += block.text;
     }
   }
 
@@ -216,7 +191,6 @@ export async function generateSocial(essay: string): Promise<SocialOutput> {
   const response = await client.messages.create({
     model: SONNET_MODEL,
     max_tokens: 8192,
-    stream: true,
     system: SOCIAL_GENERATION_PROMPT,
     messages: [
       {
@@ -227,13 +201,9 @@ export async function generateSocial(essay: string): Promise<SocialOutput> {
   });
 
   let fullContent = "";
-
-  for await (const event of response) {
-    if (
-      event.type === "content_block_delta" &&
-      event.delta.type === "text_delta"
-    ) {
-      fullContent += event.delta.text;
+  for (const block of response.content) {
+    if (block.type === "text") {
+      fullContent += block.text;
     }
   }
 

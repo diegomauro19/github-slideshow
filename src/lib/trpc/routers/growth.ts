@@ -4,7 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 
 export const growthRouter = router({
   getSubscriberMetrics: publicProcedure.query(async () => {
-    const supabase = createServerClient();
+    const supabase: any = createServerClient();
     const { data, error } = await supabase
       .from("subscriber_snapshots")
       .select("*")
@@ -16,7 +16,7 @@ export const growthRouter = router({
   }),
 
   getEssayPerformance: publicProcedure.query(async () => {
-    const supabase = createServerClient();
+    const supabase: any = createServerClient();
     const { data, error } = await supabase
       .from("essays")
       .select("id, title, status, published_at, word_count, tags")
@@ -28,7 +28,7 @@ export const growthRouter = router({
   }),
 
   listGrowthActions: publicProcedure.query(async () => {
-    const supabase = createServerClient();
+    const supabase: any = createServerClient();
     const { data, error } = await supabase
       .from("growth_actions")
       .select("*")
@@ -59,7 +59,7 @@ export const growthRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const { data, error } = await supabase
         .from("growth_actions")
         .insert({
@@ -82,7 +82,7 @@ export const growthRouter = router({
     }),
 
   listCsuiteTargets: publicProcedure.query(async () => {
-    const supabase = createServerClient();
+    const supabase: any = createServerClient();
     const { data, error } = await supabase
       .from("csuite_targets")
       .select("*")
@@ -106,7 +106,7 @@ export const growthRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const { data, error } = await supabase
         .from("csuite_targets")
         .insert({
@@ -145,7 +145,7 @@ export const growthRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, ...updates } = input;
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const { data, error } = await supabase
         .from("csuite_targets")
         .update({ ...updates, updated_at: new Date().toISOString() })

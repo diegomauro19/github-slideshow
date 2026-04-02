@@ -108,49 +108,35 @@ export async function runResearchSession(
     "Wrap the JSON in a ```json code block.",
   ].join("\n");
 
-  const response = await client.messages.create({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const params: any = {
     model: OPUS_MODEL,
     max_tokens: 16384,
-    stream: true,
     system: RESEARCH_AGENT_PROMPT,
-    tools: [{ type: "web_search_20250305" }],
-    mcp_servers: mcpServers.length > 0 ? mcpServers : undefined,
+    tools: [{ type: "web_search_20250305", name: "web_search" }],
     messages: [{ role: "user", content: userMessage }],
-  } as Anthropic.MessageCreateParams);
+  };
+  if (mcpServers.length > 0) {
+    params.mcp_servers = mcpServers;
+  }
+  const response = await client.messages.create(params);
 
   let fullContent = "";
-  let inputTokens = 0;
-  let outputTokens = 0;
-
-  for await (const event of response) {
-    if (
-      event.type === "content_block_delta" &&
-      event.delta.type === "text_delta"
-    ) {
-      fullContent += event.delta.text;
-    }
-    if (event.type === "message_start") {
-      const msg = (event as Record<string, unknown>).message as
-        | Record<string, unknown>
-        | undefined;
-      const usage = msg?.usage as Record<string, number> | undefined;
-      inputTokens = usage?.input_tokens ?? 0;
-    }
-    if (event.type === "message_delta") {
-      const usage = (event as Record<string, unknown>).usage as
-        | Record<string, number>
-        | undefined;
-      outputTokens = usage?.output_tokens ?? outputTokens;
+  for (const block of response.content) {
+    if (block.type === "text") {
+      fullContent += block.text;
     }
   }
 
-  // Parse the JSON from the response
   const parsed = parseResearchJSON(fullContent);
 
   return {
     ...parsed,
     model: OPUS_MODEL,
-    usage: { inputTokens, outputTokens },
+    usage: {
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+    },
   };
 }
 

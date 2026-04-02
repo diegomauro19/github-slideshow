@@ -256,23 +256,17 @@ export async function executeWargameRound(
   const response = await client.messages.create({
     model: OPUS_MODEL,
     max_tokens: 8192,
-    stream: true,
     system: systemPrompt,
     messages: [{ role: "user", content: userMessage }],
   });
 
   let fullContent = "";
-
-  for await (const event of response) {
-    if (
-      event.type === "content_block_delta" &&
-      event.delta.type === "text_delta"
-    ) {
-      fullContent += event.delta.text;
+  for (const block of response.content) {
+    if (block.type === "text") {
+      fullContent += block.text;
     }
   }
 
-  // Parse key points and severity from the response
   const keyPoints = extractKeyPoints(fullContent);
   const severityRating = extractSeverity(fullContent);
 
@@ -332,19 +326,14 @@ export async function synthesizeWargame(
   const response = await client.messages.create({
     model: OPUS_MODEL,
     max_tokens: 16384,
-    stream: true,
     system: WARGAME_SYNTHESIZER_PROMPT,
     messages: [{ role: "user", content: userMessage }],
   });
 
   let fullContent = "";
-
-  for await (const event of response) {
-    if (
-      event.type === "content_block_delta" &&
-      event.delta.type === "text_delta"
-    ) {
-      fullContent += event.delta.text;
+  for (const block of response.content) {
+    if (block.type === "text") {
+      fullContent += block.text;
     }
   }
 

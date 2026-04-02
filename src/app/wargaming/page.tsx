@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { Swords, Plus, X } from "lucide-react";
 import { SessionList } from "@/components/wargaming/session-list";
 import { SessionSetup } from "@/components/wargaming/session-setup";
 
-export default function WargamingPage() {
+function WargamingContent() {
   const searchParams = useSearchParams();
   const [showSetup, setShowSetup] = useState(
     searchParams.get("new") === "true"
@@ -65,5 +65,13 @@ export default function WargamingPage() {
         <SessionList />
       </div>
     </div>
+  );
+}
+
+export default function WargamingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-bg" />}>
+      <WargamingContent />
+    </Suspense>
   );
 }

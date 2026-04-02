@@ -4,7 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 
 export const researchRouter = router({
   list: publicProcedure.query(async () => {
-    const supabase = createServerClient();
+    const supabase: any = createServerClient();
     const { data, error } = await supabase
       .from("research_sessions")
       .select("*")
@@ -17,7 +17,7 @@ export const researchRouter = router({
   getById: publicProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const { data, error } = await supabase
         .from("research_sessions")
         .select("*")
@@ -38,7 +38,7 @@ export const researchRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const { data, error } = await supabase
         .from("research_sessions")
         .insert({
@@ -66,7 +66,7 @@ export const researchRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const { data, error } = await supabase
         .from("research_sessions")
         .update({

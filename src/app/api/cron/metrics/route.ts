@@ -1,86 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * GET /api/cron/metrics - Weekly metrics sync (cron job)
+ * GET /api/cron/metrics - Weekly metrics sync
  *
  * Real implementation would:
- * - Verify CRON_SECRET from Authorization header
- * - Fetch latest analytics from Substack API
- * - Update metric snapshots in Supabase
- * - Generate an AI-powered weekly brief summarizing trends
- * - Store the brief for dashboard display
- * - Triggered weekly via Vercel Cron or similar scheduler
+ * - Verify cron authorization
+ * - Pull latest subscriber data from Substack API
+ * - Snapshot growth metrics into Supabase for historical tracking
+ * - Update essay performance records
+ * - Trigger alerts if metrics fall below thresholds
  */
-
-function verifyCronSecret(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret) {
-    // In development, allow requests without secret
-    console.warn('CRON_SECRET not configured - allowing request in development mode');
-    return true;
-  }
-
-  return authHeader === `Bearer ${cronSecret}`;
-}
-
 export async function GET(request: NextRequest) {
-  if (!verifyCronSecret(request)) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
   try {
-    // In production:
-    // 1. Fetch Substack analytics via API
-    // 2. Store snapshot in metric_snapshots table
-    // 3. Call Claude to generate weekly brief
-    // 4. Store brief for dashboard display
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
-    const mockMetricsSync = {
-      job: 'weekly_metrics_sync',
-      executedAt: new Date().toISOString(),
-      status: 'completed',
-      results: {
-        substackSync: {
-          subscribersTotal: 12847,
-          subscribersDelta: '+182 (7d)',
-          paidSubscribers: 2644,
-          paidDelta: '+23 (7d)',
-          mrrCurrent: 13220,
-          mrrDelta: '+115',
-        },
-        snapshotStored: {
-          id: `snapshot_${Date.now()}`,
-          period: 'weekly',
-          weekOf: '2026-03-30',
-        },
-        aiBrief: {
-          id: `brief_${Date.now()}`,
-          summary: 'Strong week. Subscriber growth accelerated to 182 net new (vs. 134 avg). The Algorithmic Governance essay outperformed benchmarks by 34% on views and 56% on likes. Paid conversion held steady at 20.6%. One concern: email open rates dipped slightly to 58% (from 62% last week) — worth monitoring for trend. Recommended action: the topic suggestion engine identified "Institutional Memory Crisis" as highest-confidence next essay based on unused insight clustering.',
-          highlights: [
-            'Net subscriber growth: +182 (35% above 4-week average)',
-            'Top essay views: 4,287 (Algorithmic Governance)',
-            'Paid conversion rate: 20.6% (stable)',
-            'MRR: $13,220 (+$115)',
-          ],
-          concerns: [
-            'Email open rate declined: 58% (down from 62%)',
-            'Comment velocity down 12% week-over-week',
-          ],
-          generatedBy: 'claude-sonnet-4-20250514',
-        },
+    const mockResult = {
+      synced: true,
+      syncedAt: new Date().toISOString(),
+      subscriberSnapshot: {
+        total: 4_832,
+        free: 3_946,
+        paid: 886,
+        netChange7d: 47,
+        churn7d: 8,
+        newPaid7d: 12,
       },
+      essaysUpdated: 3,
+      essayUpdates: [
+        { id: 'essay_001', title: 'The Accountability Gap in Algorithmic Governance', opensAdded: 312, newComments: 5 },
+        { id: 'essay_002', title: 'Why Your Strategy Memo Is a Fiction', opensAdded: 187, newComments: 2 },
+        { id: 'essay_003', title: 'The Middle Manager Trap', opensAdded: 94, newComments: 1 },
+      ],
+      alerts: [],
     };
 
-    return NextResponse.json(mockMetricsSync);
+    return NextResponse.json(mockResult);
   } catch (error) {
-    console.error('Metrics cron error:', error);
+    console.error('Metrics sync error:', error);
     return NextResponse.json(
-      { error: 'Failed to execute metrics sync' },
+      { error: 'Failed to sync metrics' },
       { status: 500 }
     );
   }

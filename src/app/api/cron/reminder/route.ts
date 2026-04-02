@@ -1,29 +1,56 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest) {
+/**
+ * GET /api/cron/reminder - Cadence reminder for essay publishing schedule
+ *
+ * Real implementation would:
+ * - Verify cron authorization
+ * - Check the editorial calendar for upcoming deadlines
+ * - Determine if the next essay is on track (draft exists, in pipeline)
+ * - Send reminders via Slack or email if behind schedule
+ * - Return reminder status and next due dates
+ */
+export async function GET(request: NextRequest) {
   try {
-    const authHeader = req.headers.get("authorization");
+    const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const reminderResult = {
+    const mockResult = {
       reminded: true,
-      nextEssayDue: "2026-04-15",
-      essayNumber: 9,
-      plannedTitle: "The Governance Vacuum",
-      status: "no_seed",
-      actions: [
-        { type: "slack_notification", sent: true, channel: "#lumen-drafts" },
-        { type: "calendar_event", created: true, date: "2026-04-12", title: "Essay #9 Seed Due" },
-      ],
-      message: "Reminder sent: Essay #9 has no seed yet. Deadline in 13 days.",
+      remindedAt: new Date().toISOString(),
+      nextEssayDue: '2026-04-15',
+      daysUntilDue: 13,
+      currentStatus: 'drafting',
+      pipelineState: {
+        title: 'The Accountability Gap in Algorithmic Governance',
+        stage: 'drafting',
+        wordCount: 847,
+        targetWordCount: 1500,
+        percentComplete: 56,
+      },
+      cadence: {
+        frequency: 'weekly',
+        publishDay: 'Tuesday',
+        publishTime: '09:00 ET',
+        streakWeeks: 14,
+      },
+      reminderSent: {
+        channel: 'slack',
+        destination: '#editorial',
+        message: 'Essay due in 13 days. Currently at 56% of target word count. Keep writing!',
+      },
     };
 
-    return NextResponse.json(reminderResult);
+    return NextResponse.json(mockResult);
   } catch (error) {
+    console.error('Cadence reminder error:', error);
     return NextResponse.json(
-      { error: "Cadence reminder failed", details: String(error) },
+      { error: 'Failed to process cadence reminder' },
       { status: 500 }
     );
   }

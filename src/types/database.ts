@@ -305,52 +305,66 @@ export interface Database {
         Row: Essay;
         Insert: EssayInsert;
         Update: Partial<EssayInsert>;
+        Relationships: [];
       };
       insights: {
         Row: Insight;
         Insert: InsightInsert;
         Update: Partial<InsightInsert>;
+        Relationships: [];
       };
       research_sessions: {
         Row: ResearchSession;
         Insert: ResearchSessionInsert;
         Update: Partial<ResearchSessionInsert>;
+        Relationships: [];
       };
       wargame_sessions: {
         Row: WargameSession;
         Insert: WargameSessionInsert;
         Update: Partial<WargameSessionInsert>;
+        Relationships: [];
       };
       wargame_moves: {
         Row: WargameMove;
         Insert: WargameMoveInsert;
         Update: Partial<WargameMoveInsert>;
+        Relationships: [];
       };
       editorial_calendar: {
         Row: EditorialCalendarItem;
         Insert: EditorialCalendarItemInsert;
         Update: Partial<EditorialCalendarItemInsert>;
+        Relationships: [];
       };
       subscriber_snapshots: {
         Row: SubscriberSnapshot;
         Insert: SubscriberSnapshotInsert;
         Update: Partial<SubscriberSnapshotInsert>;
+        Relationships: [];
       };
       growth_actions: {
         Row: GrowthAction;
         Insert: GrowthActionInsert;
         Update: Partial<GrowthActionInsert>;
+        Relationships: [];
       };
       csuite_targets: {
         Row: CSuiteTarget;
         Insert: CSuiteTargetInsert;
         Update: Partial<CSuiteTargetInsert>;
+        Relationships: [];
       };
       ai_operations: {
         Row: AIOperation;
         Insert: AIOperationInsert;
         Update: Partial<AIOperationInsert>;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }

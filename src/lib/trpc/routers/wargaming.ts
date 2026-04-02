@@ -4,7 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 
 export const wargamingRouter = router({
   listSessions: publicProcedure.query(async () => {
-    const supabase = createServerClient();
+    const supabase: any = createServerClient();
     const { data, error } = await supabase
       .from("wargame_sessions")
       .select("*")
@@ -17,7 +17,7 @@ export const wargamingRouter = router({
   getSession: publicProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const [sessionResult, movesResult] = await Promise.all([
         supabase
           .from("wargame_sessions")
@@ -56,7 +56,7 @@ export const wargamingRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
       const { data, error } = await supabase
         .from("wargame_sessions")
         .insert({
@@ -93,7 +93,7 @@ export const wargamingRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
 
       // Get the current max move number for this session
       const { data: existing } = await supabase
@@ -138,7 +138,7 @@ export const wargamingRouter = router({
   synthesize: publicProcedure
     .input(z.object({ sessionId: z.string().uuid() }))
     .mutation(async ({ input }) => {
-      const supabase = createServerClient();
+      const supabase: any = createServerClient();
 
       // Fetch all moves for synthesis
       const { data: moves, error: movesError } = await supabase

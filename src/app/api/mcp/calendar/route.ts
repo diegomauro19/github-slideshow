@@ -1,131 +1,119 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * POST /api/mcp/calendar - Google Calendar MCP operations
+ * POST /api/mcp/calendar - Calendar MCP operations (create, check, list)
  *
  * Real implementation would:
- * - Connect to Google Calendar via MCP server
- * - Handle three actions: create, check, list
- * - create: Create calendar events (writing blocks, deadlines, publish dates)
- * - check: Check availability for a given time range
- * - list: List upcoming events with optional filtering
- * - Authenticate via Google OAuth tokens stored in environment
+ * - Connect to Google Calendar or Outlook via MCP protocol
+ * - Create events with proper timezone handling
+ * - Check availability for scheduling
+ * - List upcoming events filtered by calendar or label
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { action, params } = body;
 
-    if (!action || !params) {
+    if (!action) {
       return NextResponse.json(
-        { error: 'action and params are required' },
+        { error: 'action is required (create | check | list)' },
         { status: 400 }
       );
     }
 
     switch (action) {
       case 'create': {
-        const mockCreateResult = {
+        return NextResponse.json({
           action: 'create',
+          status: 'created',
           event: {
-            id: `cal_${Date.now()}`,
-            title: params.title || 'Writing Block',
-            description: params.description || '',
-            startTime: params.startTime || new Date(Date.now() + 86400000).toISOString(),
-            endTime: params.endTime || new Date(Date.now() + 86400000 + 7200000).toISOString(),
+            id: `evt_${Date.now()}`,
+            title: params?.title || 'Untitled Event',
+            startTime: params?.startTime || '2026-04-10T10:00:00Z',
+            endTime: params?.endTime || '2026-04-10T11:00:00Z',
+            description: params?.description || '',
             calendar: 'Lumen Editorial',
-            color: params.type === 'deadline' ? 'red' : params.type === 'publish' ? 'green' : 'blue',
-            reminders: [{ method: 'popup', minutes: 30 }],
-            status: 'confirmed',
+            conferenceLink: 'https://meet.google.com/abc-defg-hij',
             createdAt: new Date().toISOString(),
           },
-        };
-        return NextResponse.json(mockCreateResult, { status: 201 });
+        });
       }
 
       case 'check': {
-        const mockCheckResult = {
+        return NextResponse.json({
           action: 'check',
-          timeRange: {
-            start: params.startTime || new Date().toISOString(),
-            end: params.endTime || new Date(Date.now() + 86400000).toISOString(),
-          },
-          availability: {
-            isAvailable: true,
-            conflicts: [
-              {
-                title: 'Team Standup',
-                startTime: '2026-04-03T09:00:00Z',
-                endTime: '2026-04-03T09:30:00Z',
-              },
-            ],
-            suggestedSlots: [
-              { start: '2026-04-03T06:00:00Z', end: '2026-04-03T09:00:00Z', duration: '3 hours', label: 'Early morning writing block' },
-              { start: '2026-04-03T10:00:00Z', end: '2026-04-03T12:00:00Z', duration: '2 hours', label: 'Mid-morning focus time' },
-              { start: '2026-04-03T14:00:00Z', end: '2026-04-03T17:00:00Z', duration: '3 hours', label: 'Afternoon deep work' },
-            ],
-          },
-        };
-        return NextResponse.json(mockCheckResult);
+          date: params?.date || '2026-04-10',
+          availability: [
+            { start: '08:00', end: '09:30', status: 'free' },
+            { start: '09:30', end: '10:30', status: 'busy', event: 'Editorial standup' },
+            { start: '10:30', end: '12:00', status: 'free' },
+            { start: '12:00', end: '13:00', status: 'busy', event: 'Lunch' },
+            { start: '13:00', end: '14:30', status: 'free' },
+            { start: '14:30', end: '15:30', status: 'busy', event: 'Growth strategy review' },
+            { start: '15:30', end: '18:00', status: 'free' },
+          ],
+          timezone: 'America/New_York',
+        });
       }
 
       case 'list': {
-        const mockListResult = {
+        return NextResponse.json({
           action: 'list',
           events: [
             {
-              id: 'cal_001',
-              title: 'Essay Draft: Algorithmic Governance',
-              type: 'writing_block',
-              startTime: '2026-04-03T06:00:00Z',
-              endTime: '2026-04-03T09:00:00Z',
+              id: 'evt_001',
+              title: 'Essay deadline: Algorithmic Governance',
+              startTime: '2026-04-08T09:00:00Z',
+              endTime: '2026-04-08T09:00:00Z',
               calendar: 'Lumen Editorial',
-              status: 'upcoming',
+              isAllDay: true,
+              color: 'amber',
             },
             {
-              id: 'cal_002',
-              title: 'DEADLINE: Algorithmic Governance final draft',
-              type: 'deadline',
-              startTime: '2026-04-05T23:59:00Z',
-              endTime: '2026-04-05T23:59:00Z',
+              id: 'evt_002',
+              title: 'Editorial standup',
+              startTime: '2026-04-09T09:30:00Z',
+              endTime: '2026-04-09T10:00:00Z',
               calendar: 'Lumen Editorial',
-              status: 'upcoming',
+              isAllDay: false,
+              color: 'blue',
             },
             {
-              id: 'cal_003',
-              title: 'PUBLISH: Algorithmic Governance',
-              type: 'publish',
-              startTime: '2026-04-07T10:00:00Z',
-              endTime: '2026-04-07T10:30:00Z',
-              calendar: 'Lumen Editorial',
-              status: 'upcoming',
+              id: 'evt_003',
+              title: 'Podcast recording: Tech & Policy',
+              startTime: '2026-04-11T14:00:00Z',
+              endTime: '2026-04-11T15:30:00Z',
+              calendar: 'External',
+              isAllDay: false,
+              color: 'purple',
             },
             {
-              id: 'cal_004',
-              title: 'Research Block: Institutional Memory topic',
-              type: 'writing_block',
-              startTime: '2026-04-08T14:00:00Z',
-              endTime: '2026-04-08T17:00:00Z',
+              id: 'evt_004',
+              title: 'Substack publish window',
+              startTime: '2026-04-15T09:00:00Z',
+              endTime: '2026-04-15T09:00:00Z',
               calendar: 'Lumen Editorial',
-              status: 'upcoming',
+              isAllDay: true,
+              color: 'green',
             },
           ],
-          totalEvents: 4,
-          range: params.range || '7_days',
-        };
-        return NextResponse.json(mockListResult);
+          range: {
+            start: params?.start || '2026-04-07',
+            end: params?.end || '2026-04-20',
+          },
+        });
       }
 
       default:
         return NextResponse.json(
-          { error: `Unknown action: ${action}. Supported actions: create, check, list` },
+          { error: `Unknown action: ${action}. Supported: create, check, list` },
           { status: 400 }
         );
     }
   } catch (error) {
     console.error('Calendar MCP error:', error);
     return NextResponse.json(
-      { error: 'Failed to execute calendar operation' },
+      { error: 'Failed to execute Calendar MCP operation' },
       { status: 500 }
     );
   }
