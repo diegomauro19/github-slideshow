@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import {
   Package,
   Boxes,
@@ -14,6 +15,12 @@ import {
   Snowflake,
   Thermometer,
   Archive,
+  BarChart3,
+  GitCompare,
+  ShoppingCart,
+  Route,
+  FileBarChart,
+  Settings,
 } from 'lucide-react';
 import {
   LineChart,
@@ -61,24 +68,28 @@ const alertas = [
     tipo: 'warning',
     mensaje: 'SALMÓN FRESCO X KG — vence en 2 días',
     tiempo: 'Hace 12 min',
+    link: '/inventario',
   },
   {
     id: 2,
     tipo: 'warning',
     mensaje: 'RÚGULA X 250G — vence en 3 días',
     tiempo: 'Hace 25 min',
+    link: '/inventario',
   },
   {
     id: 3,
     tipo: 'error',
     mensaje: 'ATÚN FRESCO X KG — stock bajo (32 uds)',
     tiempo: 'Hace 1 hora',
+    link: '/prediccion-agotados',
   },
   {
     id: 4,
     tipo: 'info',
     mensaje: 'Transferencia completada: CDP → Olivia Laureles (45 productos)',
     tiempo: 'Hace 2 horas',
+    link: '/movimientos',
   },
 ];
 
@@ -89,6 +100,24 @@ const familias = [
 ];
 
 const totalFamilias = 1026 + 1863 + 251;
+
+const kpiCards = [
+  { label: 'Total Productos', value: '3,198', icon: Package, color: ACCENT_BLUE, href: '/inventario' },
+  { label: 'Personal Activo', value: '47', icon: Users, color: GREEN, href: '/perfiles' },
+  { label: 'Puntos de Venta', value: '19', icon: Store, color: AMBER, href: '/pos-locales' },
+  { label: 'Cantidad Total', value: '847,293 uds', icon: Boxes, color: TEAL, href: '/inventario' },
+];
+
+const quickNavTabs = [
+  { label: 'Inventario', href: '/inventario', icon: Package },
+  { label: 'Movimientos', href: '/movimientos', icon: Route },
+  { label: 'Varianza', href: '/varianza', icon: GitCompare },
+  { label: 'Recetas', href: '/recetas', icon: ShoppingCart },
+  { label: 'Predicción', href: '/prediccion-agotados', icon: BarChart3 },
+  { label: 'Métricas', href: '/metricas', icon: FileBarChart },
+  { label: 'Perfiles', href: '/perfiles', icon: Users },
+  { label: 'Configuración', href: '/configuracion', icon: Settings },
+];
 
 export default function DashboardPage() {
   return (
@@ -114,15 +143,11 @@ export default function DashboardPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-        {[
-          { label: 'Total Productos', value: '3,198', icon: Package, color: ACCENT_BLUE },
-          { label: 'Cantidad Total', value: '847,293 uds', icon: Boxes, color: TEAL },
-          { label: 'Personal Activo', value: '47', icon: Users, color: GREEN },
-          { label: 'Puntos de Venta', value: '19', icon: Store, color: AMBER },
-        ].map((kpi) => (
-          <div
+        {kpiCards.map((kpi) => (
+          <Link
             key={kpi.label}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md transition-shadow"
+            href={kpi.href}
+            className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer"
           >
             <div
               className="flex items-center justify-center w-12 h-12 rounded-lg"
@@ -136,7 +161,7 @@ export default function DashboardPage() {
                 {kpi.value}
               </p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -281,7 +306,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Alerts */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
         <div className="flex items-center gap-2 mb-5">
           <AlertTriangle className="w-5 h-5" style={{ color: AMBER }} />
           <h2 className="text-lg font-semibold" style={{ color: NAVY }}>
@@ -299,9 +324,10 @@ export default function DashboardPage() {
                   ? 'bg-amber-50'
                   : 'bg-blue-50';
             return (
-              <div
+              <Link
                 key={a.id}
-                className={`flex items-center justify-between p-3.5 rounded-lg border-l-4 ${bgColor}`}
+                href={a.link}
+                className={`flex items-center justify-between p-3.5 rounded-lg border-l-4 ${bgColor} hover:opacity-80 transition-opacity cursor-pointer`}
                 style={{ borderLeftColor: borderColor }}
               >
                 <div className="flex items-center gap-3">
@@ -309,9 +335,30 @@ export default function DashboardPage() {
                   <span className="text-sm text-gray-800">{a.mensaje}</span>
                 </div>
                 <span className="text-xs text-gray-500 whitespace-nowrap ml-4">{a.tiempo}</span>
-              </div>
+              </Link>
             );
           })}
+        </div>
+      </div>
+
+      {/* Quick Navigation Tabs */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 className="text-lg font-semibold mb-5" style={{ color: NAVY }}>
+          Navegación Rápida
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          {quickNavTabs.map((tab) => (
+            <Link
+              key={tab.label}
+              href={tab.href}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:border-[#148F77] hover:bg-[#148F77]/5 hover:scale-105 transition-all duration-200 cursor-pointer group"
+            >
+              <tab.icon className="w-5 h-5 text-gray-400 group-hover:text-[#148F77] transition-colors" />
+              <span className="text-xs font-medium text-gray-600 group-hover:text-[#148F77] transition-colors text-center">
+                {tab.label}
+              </span>
+            </Link>
+          ))}
         </div>
       </div>
     </div>
