@@ -1,13 +1,28 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, Wifi, Bell, SlidersHorizontal, Globe, Clock, Mail, MessageSquare, Smartphone } from 'lucide-react';
+import { Settings, Wifi, Bell, SlidersHorizontal, Globe, Clock, Mail, MessageSquare, Smartphone, RotateCcw } from 'lucide-react';
+import { useToast } from '@/components/shared/Toast';
 
 const NAVY = '#0D1B2A';
 const ACCENT_BLUE = '#2980B9';
 const TEAL = '#148F77';
 const GREEN = '#1E8449';
 const AMBER = '#F39C12';
+
+const DEFAULTS = {
+  empresa: 'Mystic Foods SAS',
+  timezone: 'America/Bogota (UTC-5)',
+  idioma: 'Español (Colombia)',
+  brokerUrl: 'mqtt://broker.vitatag.io',
+  brokerPort: '8883',
+  emailNotif: true,
+  whatsappNotif: true,
+  pushNotif: false,
+  varianzaMax: '5',
+  stockMin: '10',
+  diasVencimiento: '3',
+};
 
 function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void }) {
   return (
@@ -25,9 +40,38 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void 
 }
 
 export default function ConfiguracionPage() {
-  const [emailNotif, setEmailNotif] = useState(true);
-  const [whatsappNotif, setWhatsappNotif] = useState(true);
-  const [pushNotif, setPushNotif] = useState(false);
+  const { toast } = useToast();
+
+  const [empresa, setEmpresa] = useState(DEFAULTS.empresa);
+  const [timezone, setTimezone] = useState(DEFAULTS.timezone);
+  const [idioma, setIdioma] = useState(DEFAULTS.idioma);
+  const [brokerUrl, setBrokerUrl] = useState(DEFAULTS.brokerUrl);
+  const [brokerPort, setBrokerPort] = useState(DEFAULTS.brokerPort);
+  const [emailNotif, setEmailNotif] = useState(DEFAULTS.emailNotif);
+  const [whatsappNotif, setWhatsappNotif] = useState(DEFAULTS.whatsappNotif);
+  const [pushNotif, setPushNotif] = useState(DEFAULTS.pushNotif);
+  const [varianzaMax, setVarianzaMax] = useState(DEFAULTS.varianzaMax);
+  const [stockMin, setStockMin] = useState(DEFAULTS.stockMin);
+  const [diasVencimiento, setDiasVencimiento] = useState(DEFAULTS.diasVencimiento);
+
+  const handleSave = () => {
+    toast('success', 'Configuración guardada exitosamente');
+  };
+
+  const handleReset = () => {
+    setEmpresa(DEFAULTS.empresa);
+    setTimezone(DEFAULTS.timezone);
+    setIdioma(DEFAULTS.idioma);
+    setBrokerUrl(DEFAULTS.brokerUrl);
+    setBrokerPort(DEFAULTS.brokerPort);
+    setEmailNotif(DEFAULTS.emailNotif);
+    setWhatsappNotif(DEFAULTS.whatsappNotif);
+    setPushNotif(DEFAULTS.pushNotif);
+    setVarianzaMax(DEFAULTS.varianzaMax);
+    setStockMin(DEFAULTS.stockMin);
+    setDiasVencimiento(DEFAULTS.diasVencimiento);
+    toast('info', 'Valores restablecidos por defecto');
+  };
 
   return (
     <div className="space-y-6">
@@ -53,13 +97,18 @@ export default function ConfiguracionPage() {
               <label className="block text-sm font-medium text-gray-600 mb-1.5">Nombre de la empresa</label>
               <input
                 type="text"
-                defaultValue="Mystic Foods SAS"
+                value={empresa}
+                onChange={(e) => setEmpresa(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1.5">Zona horaria</label>
-              <select className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-white">
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-white"
+              >
                 <option>America/Bogota (UTC-5)</option>
                 <option>America/New_York (UTC-5)</option>
                 <option>America/Mexico_City (UTC-6)</option>
@@ -67,7 +116,11 @@ export default function ConfiguracionPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1.5">Idioma</label>
-              <select className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-white">
+              <select
+                value={idioma}
+                onChange={(e) => setIdioma(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-white"
+              >
                 <option>Español (Colombia)</option>
                 <option>English</option>
                 <option>Português</option>
@@ -92,7 +145,8 @@ export default function ConfiguracionPage() {
               <label className="block text-sm font-medium text-gray-600 mb-1.5">Broker URL</label>
               <input
                 type="text"
-                defaultValue="mqtt://broker.vitatag.io"
+                value={brokerUrl}
+                onChange={(e) => setBrokerUrl(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
               />
             </div>
@@ -100,7 +154,8 @@ export default function ConfiguracionPage() {
               <label className="block text-sm font-medium text-gray-600 mb-1.5">Puerto</label>
               <input
                 type="text"
-                defaultValue="8883"
+                value={brokerPort}
+                onChange={(e) => setBrokerPort(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
               />
             </div>
@@ -176,7 +231,8 @@ export default function ConfiguracionPage() {
               <label className="block text-sm font-medium text-gray-600 mb-1.5">Varianza máxima permitida (%)</label>
               <input
                 type="number"
-                defaultValue={5}
+                value={varianzaMax}
+                onChange={(e) => setVarianzaMax(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
               />
               <p className="text-xs text-gray-400 mt-1">Se genera alerta si la varianza supera este porcentaje</p>
@@ -185,7 +241,8 @@ export default function ConfiguracionPage() {
               <label className="block text-sm font-medium text-gray-600 mb-1.5">Stock mínimo (unidades)</label>
               <input
                 type="number"
-                defaultValue={10}
+                value={stockMin}
+                onChange={(e) => setStockMin(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
               />
               <p className="text-xs text-gray-400 mt-1">Alerta cuando un producto baje de este nivel</p>
@@ -194,7 +251,8 @@ export default function ConfiguracionPage() {
               <label className="block text-sm font-medium text-gray-600 mb-1.5">Días antes de vencimiento</label>
               <input
                 type="number"
-                defaultValue={3}
+                value={diasVencimiento}
+                onChange={(e) => setDiasVencimiento(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
               />
               <p className="text-xs text-gray-400 mt-1">Alerta de productos próximos a vencer</p>
@@ -203,9 +261,17 @@ export default function ConfiguracionPage() {
         </div>
       </div>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3">
         <button
+          onClick={handleReset}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors"
+        >
+          <RotateCcw size={16} />
+          Restablecer valores por defecto
+        </button>
+        <button
+          onClick={handleSave}
           className="px-6 py-2.5 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity"
           style={{ backgroundColor: GREEN }}
         >
