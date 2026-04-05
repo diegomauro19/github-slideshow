@@ -302,7 +302,7 @@ export default function RecetasPage() {
 
             return (
               <div key={recipe.id} className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-200 relative">
-                <Link href={`/recetas/${recipe.id}`}>
+                <div className="cursor-pointer" onClick={() => window.location.href = `/recetas/${recipe.id}`}>
                   <div className={`h-36 bg-gradient-to-br ${recipe.imageGradient} relative`}>
                     <div className="absolute top-3 right-3">
                       <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${statusColor.bg} ${statusColor.text}`}>
@@ -331,7 +331,7 @@ export default function RecetasPage() {
                     </div>
                     <p className="text-xs text-gray-400">Actualizada: {recipe.lastUpdated}</p>
                   </div>
-                </Link>
+                </div>
                 {/* Context menu overlay */}
                 <div className="absolute top-40 right-3">
                   <RecipeMenu
